@@ -15,23 +15,7 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
     isp,
     premium,
     badges,
-    lat,
-    lon,
   } = data || {};
-
-  // Map URL façon VaultCord
-  let mapUrl = null;
-  if (process.env.GOOGLE_MAPS_KEY && lat && lon) {
-    const qs = new URLSearchParams({
-      center: `${lat},${lon}`,
-      zoom: "11",
-      size: "700x300",
-      maptype: "roadmap",
-      markers: `color:red|${lat},${lon}`,
-      key: process.env.GOOGLE_MAPS_KEY,
-    });
-    mapUrl = `https://maps.googleapis.com/maps/api/staticmap?${qs.toString()}`;
-  }
 
   const embed = new EmbedBuilder()
     .setTitle("Verification")
@@ -59,12 +43,11 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
     inline: false,
   });
 
-  // Details
+  // 💻 Tech Details
   const techSection = [];
   if (ip) techSection.push(`IP Address: ${ip}`);
   if (browser) techSection.push(`Browser: ${browser}`);
   if (registered) techSection.push(`Registered: ${registered}`);
-
   if (techSection.length > 0) {
     embed.addFields({
       name: "Details",
@@ -76,9 +59,8 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
   // 🌍 Location & Provider
   const locSection = [];
   if (country) locSection.push(`Country: ${country}`);
-  if (region || city) locSection.push(`Region: ${region || ""} ${city || ""}`.trim());
+  if (region || city) locSection.push(`Region: ${[region, city].filter(Boolean).join(", ")}`);
   if (isp) locSection.push(`ISP: ${isp}`);
-
   if (locSection.length > 0) {
     embed.addFields({
       name: "Location & Provider",
@@ -89,21 +71,17 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
 
   // 🎖 Badges & Membership
   const badgeSection = [];
-  badgeSection.push(`Premium: ${premium || "None"}`);
-  badgeSection.push(`Badges: ${badges || "None"}`);
+  if (premium) badgeSection.push(`Premium: ${premium}`);
+  if (badges) badgeSection.push(`Badges: ${badges}`);
+  if (badgeSection.length > 0) {
+    embed.addFields({
+      name: "Badges",
+      value: badgeSection.join("\n"),
+      inline: false,
+    });
+  }
 
-  embed.addFields({
-    name: "Badges",
-    value: badgeSection.join("\n"),
-    inline: false,
-  });
-
-  // 📌 Carte Google en bas
-  if (mapUrl) embed.setImage(mapUrl);
-
-  // footer stylé
-  embed.setFooter({ text: "verification and auth bot by Hebi" });
+  embed.setFooter({ text: "Member verification and auth bot by Hebi" });
 
   await channel.send({ embeds: [embed] });
 };
-
