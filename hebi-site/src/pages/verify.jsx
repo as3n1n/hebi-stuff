@@ -19,9 +19,9 @@ export default function Verify() {
       });
 
       const data = await res.json();
-      setStatus(data.success ? "✅ Verification successful!" : "❌ Verification failed.");
+      setStatus(data.success ? "Verification successful!" : "Verification failed.");
     } catch (err) {
-      setStatus("❌ Error connecting to server.");
+      setStatus("Error connecting to server.");
     }
   };
 
@@ -48,3 +48,4 @@ export default function Verify() {
     </section>
   );
 }
+
