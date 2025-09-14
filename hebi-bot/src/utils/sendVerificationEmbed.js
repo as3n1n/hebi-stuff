@@ -34,7 +34,7 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("🌟 New Member Verification 🌟")
+    .setTitle("Verification")
     .setThumbnail(member.user.displayAvatarURL({ extension: "png", size: 256 }))
     .setColor("#B22222");
 
@@ -59,7 +59,7 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
     inline: false,
   });
 
-  // 💻 Tech Details
+  // Details
   const techSection = [];
   if (ip) techSection.push(`IP Address: ${ip}`);
   if (browser) techSection.push(`Browser: ${browser}`);
@@ -102,7 +102,8 @@ module.exports = async function sendVerificationEmbed(channel, member, data) {
   if (mapUrl) embed.setImage(mapUrl);
 
   // footer stylé
-  embed.setFooter({ text: "🔒 Member verification and auth bot by Hebi" });
+  embed.setFooter({ text: "verification and auth bot by Hebi" });
 
   await channel.send({ embeds: [embed] });
 };
+
