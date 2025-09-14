@@ -3,11 +3,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#8B0000",
-        secondary: "#B22222",
-        background: "#0D0D0D",
-        accent: "#FFD700",
-        text: "#FFFFFF"
+        primary: "#B22222", // rouge profond
+        dark: "#0D0D0D",    // noir
+        light: "#F5F5F5",   // texte clair
+        accent: "#FF0000"   // rouge vif
       },
     },
   },
