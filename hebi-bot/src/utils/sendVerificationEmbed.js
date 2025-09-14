@@ -1,23 +1,108 @@
 const { EmbedBuilder } = require("discord.js");
 
-function sendVerificationEmbed(channel, member, data) {
-  const avatarUrl = member.user.displayAvatarURL({ extension: "png", size: 512 });
+module.exports = async function sendVerificationEmbed(channel, member, data) {
+  const {
+    email,
+    emailVerified,
+    locale,
+    twoFA,
+    ip,
+    browser,
+    registered,
+    country,
+    region,
+    city,
+    isp,
+    premium,
+    badges,
+    lat,
+    lon,
+  } = data || {};
+
+  // Map URL façon VaultCord
+  let mapUrl = null;
+  if (process.env.GOOGLE_MAPS_KEY && lat && lon) {
+    const qs = new URLSearchParams({
+      center: `${lat},${lon}`,
+      zoom: "11",
+      size: "700x300",
+      maptype: "roadmap",
+      markers: `color:red|${lat},${lon}`,
+      key: process.env.GOOGLE_MAPS_KEY,
+    });
+    mapUrl = `https://maps.googleapis.com/maps/api/staticmap?${qs.toString()}`;
+  }
 
   const embed = new EmbedBuilder()
-    .setTitle("New Member Verification")
-    .setThumbnail(avatarUrl)
-    .addFields(
-      { name: "User", value: `<@${member.id}> (${member.user.tag})`, inline: false },
-      { name: "Email & Contact", value: `Email: ${data.email || "N/A"}\nVerified: ${data.emailVerified || "N/A"}\nLocale: ${data.locale || "N/A"}\n2FA: ${data.twoFA || "false"}`, inline: false },
-      { name: "User Details", value: `IP: ${data.ip || "N/A"}\nBrowser: ${data.browser || "N/A"}\nRegistered: ${data.registered || "N/A"}`, inline: false },
-      { name: "Location & Provider", value: `Country: ${data.country || "N/A"}\nRegion: ${data.region || "N/A"}\nISP: ${data.isp || "N/A"}`, inline: false },
-      { name: "Badges", value: `Premium: ${data.premium || "None"}\nBadges: ${data.badges || "None"}`, inline: false }
-    )
-    .setImage(avatarUrl)
-    .setFooter({ text: "Member verification bot by Javelin" })
-    .setColor("#8B0000");
+    .setTitle("🌟 New Member Verification 🌟")
+    .setThumbnail(member.user.displayAvatarURL({ extension: "png", size: 256 }))
+    .setColor("#B22222");
 
-  channel.send({ embeds: [embed] });
-}
+  // 👤 User
+  embed.addFields({
+    name: "👤 User",
+    value: `<@${member.id}> (${member.user.tag})`,
+    inline: false,
+  });
 
-module.exports = sendVerificationEmbed;
+  // 📧 Email & Contact
+  const emailSection = [];
+  if (email) emailSection.push(`Email: ${email}`);
+  if (emailVerified) emailSection.push(`Email verified: ${emailVerified}`);
+  emailSection.push(`ID: ${member.id}`);
+  if (locale) emailSection.push(`Locale: ${locale}`);
+  if (twoFA) emailSection.push(`2FA enabled: ${twoFA}`);
+
+  embed.addFields({
+    name: "Email & Contact",
+    value: emailSection.join("\n"),
+    inline: false,
+  });
+
+  // 💻 Tech Details
+  const techSection = [];
+  if (ip) techSection.push(`IP Address: ${ip}`);
+  if (browser) techSection.push(`Browser: ${browser}`);
+  if (registered) techSection.push(`Registered: ${registered}`);
+
+  if (techSection.length > 0) {
+    embed.addFields({
+      name: "Details",
+      value: techSection.join("\n"),
+      inline: false,
+    });
+  }
+
+  // 🌍 Location & Provider
+  const locSection = [];
+  if (country) locSection.push(`Country: ${country}`);
+  if (region || city) locSection.push(`Region: ${region || ""} ${city || ""}`.trim());
+  if (isp) locSection.push(`ISP: ${isp}`);
+
+  if (locSection.length > 0) {
+    embed.addFields({
+      name: "Location & Provider",
+      value: locSection.join("\n"),
+      inline: false,
+    });
+  }
+
+  // 🎖 Badges & Membership
+  const badgeSection = [];
+  badgeSection.push(`Premium: ${premium || "None"}`);
+  badgeSection.push(`Badges: ${badges || "None"}`);
+
+  embed.addFields({
+    name: "Badges",
+    value: badgeSection.join("\n"),
+    inline: false,
+  });
+
+  // 📌 Carte Google en bas
+  if (mapUrl) embed.setImage(mapUrl);
+
+  // footer stylé
+  embed.setFooter({ text: "🔒 Member verification and auth bot by Hebi" });
+
+  await channel.send({ embeds: [embed] });
+};
