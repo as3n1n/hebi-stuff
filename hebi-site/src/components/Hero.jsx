@@ -3,32 +3,24 @@ import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
-    <div className="bg-gradient-to-r from-primary via-secondary to-primary text-text py-24 px-6 text-center">
+    <section className="bg-dark text-light py-24 text-center">
       <motion.h1
-        className="text-5xl font-extrabold mb-6"
-        initial={{ opacity: 0, y: -20 }}
+        className="text-5xl font-extrabold mb-6 text-primary"
+        initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        Welcome to <span className="text-accent">Javelin</span>
+        Discord Verification
       </motion.h1>
-      <p className="text-lg max-w-2xl mx-auto mb-8">
-        Secure and simple Discord account verification.
+      <p className="text-lg mb-8 text-gray-300">
+        with captcha, VPN/proxy detection, and alt-blocking.
       </p>
-      <div className="flex justify-center gap-4">
-        <Link
-          to="/verify"
-          className="px-6 py-3 bg-accent text-black rounded-lg hover:bg-yellow-400 transition"
-        >
-          Start Verification
-        </Link>
-        <Link
-          to="/about"
-          className="px-6 py-3 border border-text rounded-lg hover:bg-white hover:text-primary transition"
-        >
-          Learn More
-        </Link>
-      </div>
-    </div>
+      <Link
+        to="/verify"
+        className="bg-primary hover:bg-accent text-white px-8 py-3 rounded-lg font-semibold"
+      >
+        Verify & Join
+      </Link>
+    </section>
   );
 }
