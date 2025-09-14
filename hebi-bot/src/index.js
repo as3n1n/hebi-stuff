@@ -2,11 +2,10 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch");
 const sendVerificationEmbed = require("./utils/sendVerificationEmbed");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 // load events
@@ -17,7 +16,7 @@ app.set("trust proxy", true);
 app.use(cors({ origin: process.env.SITE_ORIGIN || "https://javelin.asia" }));
 app.use(express.json());
 
-// --- utils ---
+// utils
 function getClientIp(req) {
   const xf = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   return xf || req.ip || "";
@@ -33,7 +32,6 @@ async function geoFromIp(ip) {
   }
 }
 
-// Vérification hCaptcha
 async function verifyHCaptcha(token, ip) {
   const params = new URLSearchParams();
   params.append("response", token);
@@ -45,11 +43,11 @@ async function verifyHCaptcha(token, ip) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
   });
+
   const j = await r.json();
   return !!j.success;
 }
 
-// --- routes ---
 // verify endpoint
 app.post("/api/verify", async (req, res) => {
   const { userId, secret, captchaToken } = req.body;
@@ -58,8 +56,9 @@ app.post("/api/verify", async (req, res) => {
   }
 
   try {
-    // vérif captcha
     const ip = getClientIp(req);
+
+    // vérif captcha
     const captchaOK = await verifyHCaptcha(captchaToken, ip);
     if (!captchaOK) {
       return res.status(400).json({ success: false, error: "Captcha failed" });
@@ -72,10 +71,10 @@ app.post("/api/verify", async (req, res) => {
     if (role && member) {
       await member.roles.add(role);
 
-      // géo infos
+      // localisation
       const geo = await geoFromIp(ip);
 
-      // log
+      // logs
       const channel = guild.channels.cache.get(process.env.LOGS_CHANNEL_ID);
       if (channel) {
         await sendVerificationEmbed(channel, member, {
@@ -92,8 +91,6 @@ app.post("/api/verify", async (req, res) => {
           isp: geo?.org,
           premium: req.body.premium || "None",
           badges: req.body.badges || "None",
-          lat: geo?.latitude,
-          lon: geo?.longitude,
         });
       }
 
@@ -107,26 +104,8 @@ app.post("/api/verify", async (req, res) => {
   }
 });
 
-// send embed endpoint (optionnel)
-app.post("/api/sendEmbed", async (req, res) => {
-  const { userId, ...data } = req.body;
-  try {
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
-    const member = await guild.members.fetch(userId);
-    const channel = guild.channels.cache.get(process.env.LOGS_CHANNEL_ID);
-
-    if (!channel) return res.status(404).json({ error: "Channel not found" });
-
-    await sendVerificationEmbed(channel, member, data);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error sending embed:", err);
-    res.status(500).json({ success: false });
-  }
-});
-
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Hebi API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Bot API running on port ${PORT}`));
 
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
