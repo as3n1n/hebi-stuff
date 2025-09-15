@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+// src/utils/vintedApi.js
 
 const APIFY_ACTOR_URL = `https://api.apify.com/v2/acts/bebity~vinted-premium-actor/run-sync-get-dataset-items?token=${process.env.APIFY_TOKEN}`;
 
@@ -12,12 +12,14 @@ async function getLatestVinted(limit = 3) {
 
     if (!res.ok) return [];
     const data = await res.json();
+
     return data.slice(0, limit).map(i => ({
       title: i.title,
       price: i.price,
       url: i.url,
     }));
-  } catch {
+  } catch (err) {
+    console.error("Vinted API error:", err.message);
     return [];
   }
 }
