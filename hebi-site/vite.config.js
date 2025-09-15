@@ -8,11 +8,14 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: "public/_redirects",
-          dest: ".",
+          src: "public/_redirects", // ton fichier
+          dest: ".",                // copié à la racine du dist/
         },
       ],
     }),
   ],
+  build: {
+    outDir: "dist",
+  },
   base: "/",
 });
