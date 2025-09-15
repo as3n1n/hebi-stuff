@@ -5,6 +5,8 @@ import BackgroundAnimation from "./components/BackgroundAnimation";
 import Home from "./pages/Home";
 import Status from "./pages/Status";
 import AddBot from "./pages/AddBot";
+import Login from "./pages/Login";
+import Panel from "./pages/Panel";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/status" element={<Status />} />
           <Route path="/addbot" element={<AddBot />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/panel" element={<Panel />} />
         </Routes>
       </main>
       <Footer />
