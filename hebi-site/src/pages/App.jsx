@@ -8,7 +8,7 @@ import Invite from "./Invite";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen bg-black">
+      <div className="flex flex-col min-h-screen bg-black text-white">
         <Navbar />
         <main className="flex-grow">
           <Routes>
