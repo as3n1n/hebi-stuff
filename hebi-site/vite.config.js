@@ -1,16 +1,26 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: "public/_redirects", //
+          dest: ".",                // 
+        },
+      ],
+    }),
+  ],
   base: "/",
-  publicDir: "public", // assure que _redirects est copié
   build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, "index.html"),
-      },
-    },
+    outDir: "dist",
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+    open: true,
   },
 });
