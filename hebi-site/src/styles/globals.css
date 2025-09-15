@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-dark text-lightGray font-sans;
+  background: linear-gradient(to bottom, #0d0d0d, #1a0000);
+  background-attachment: fixed;
+}
+
+.hero-bg {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to top right, rgba(211,47,47,0.4), transparent);
+}
+
+button, a.btn {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
