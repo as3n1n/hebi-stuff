@@ -24,6 +24,7 @@ for (const file of fs.readdirSync(commandsPath)) {
 
 // Charger les events
 require("./events/guildMemberAdd")(client);
+require("./events/messageCreate")(client);
 
 // Express API
 const app = express();
@@ -170,3 +171,4 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
