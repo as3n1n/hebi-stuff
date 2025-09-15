@@ -12,7 +12,7 @@ export default function VerificationCard({ user }) {
     });
 
     const data = await res.json();
-    alert(data.success ? "✅ Verified!" : "❌ Verification failed");
+    alert(data.success ? "Verified!" : "Verification failed");
   };
 
   return (
@@ -30,3 +30,4 @@ export default function VerificationCard({ user }) {
     </div>
   );
 }
+
