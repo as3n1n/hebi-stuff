@@ -20,7 +20,7 @@ module.exports = {
             .join("\n");
         }
       } catch (e) {
-        vintedText = "⚠Impossible de récupérer les articles.";
+        vintedText = "Impossible de récupérer les articles.";
       }
 
       // Embed style Hebi
@@ -66,12 +66,12 @@ module.exports = {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("suggestion_modal")
-          .setLabel("💡 Suggestion")
+          .setLabel("Suggestion")
           .setStyle(ButtonStyle.Primary),
 
         new ButtonBuilder()
           .setCustomId("bugreport_modal")
-          .setLabel("🐞 Report Bug")
+          .setLabel("Report Bug")
           .setStyle(ButtonStyle.Danger)
       );
 
