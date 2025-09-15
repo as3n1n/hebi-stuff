@@ -8,7 +8,7 @@ export default function AddBot() {
         href="https://discord.com/oauth2/authorize?client_id=1327772341639581747"
         target="_blank"
         rel="noopener noreferrer"
-        className="btn bg-primary text-dark px-8 py-4 rounded-full font-semibold hover:bg-red-600 animate-fade-in"
+        className="bg-primary text-dark px-8 py-4 rounded-full font-semibold hover:bg-red-600 shadow-md animate-fade-in"
       >
         Invite Hebi
       </a>
