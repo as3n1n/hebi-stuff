@@ -1,5 +1,5 @@
 {
-  "name": "site-verification",
+  "name": "hebi-site",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -25,3 +25,4 @@
     "node": "20.x"
   }
 }
+
