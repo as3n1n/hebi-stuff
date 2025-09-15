@@ -1,10 +1,23 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./pages/App.jsx";  
-import "./styles/globals.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import Hero from "../components/Hero";
+import Features from "../components/Features";
+import Verify from "./verify"; //
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div className="flex flex-col min-h-screen bg-dark">
+        <Navbar />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<><Hero /><Features /></>} />
+            <Route path="/verify" element={<Verify />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </BrowserRouter>
+  );
+}
