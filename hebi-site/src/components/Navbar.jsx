@@ -7,6 +7,7 @@ export default function Navbar() {
         <Link to="/" className="hover:text-primary">Home</Link>
         <Link to="/status" className="hover:text-primary">Status</Link>
         <Link to="/addbot" className="hover:text-primary">Add Bot</Link>
+        <Link to="/login" className="hover:text-primary">Login</Link>
       </nav>
     </div>
   );
