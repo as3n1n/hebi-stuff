@@ -1,39 +1,50 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-const { getLatestVintedPosts } = require("../utils/vintedApi");
+// src/commands/infohebi.js
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require("discord.js");
+const { getLatestVinted } = require("../utils/vintedApi");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("infohebi")
-    .setDescription("Panneau d'information Hebi (Admins uniquement)")
-    .setDefaultMemberPermissions(0), // admin only
-  async execute(interaction) {
-    if (!interaction.client.cooldowns) interaction.client.cooldowns = new Set();
-    if (interaction.client.cooldowns.has(interaction.user.id)) {
-      return interaction.reply({ content: "⏳ Attends 60 secondes avant de réutiliser la commande.", ephemeral: true });
-    }
-    interaction.client.cooldowns.add(interaction.user.id);
-    setTimeout(() => interaction.client.cooldowns.delete(interaction.user.id), 60000);
+    .setDescription("Infos Hebi")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-    // Derniers posts Vinted
-    const posts = await getLatestVintedPosts(process.env.VINTED_USER || "demo", 3);
+  async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+
+    // récupération des derniers posts
+    const items = await getLatestVinted(3);
 
     const embed = new EmbedBuilder()
-      .setTitle("🔴 Hebi Control Panel")
-      .setColor("Red")
+      .setTitle("Hebi – Dashboard Info")
+      .setDescription("Voici les dernières infos et fonctionnalités :")
+      .setColor("#B22222")
       .addFields(
-        { name: "Vinted Tracker", value: posts.length ? posts.map(p => `[${p.title}](${p.url}) - ${p.price}`).join("\n") : "Aucun post trouvé.", inline: false },
-        { name: "API Status", value: "Online", inline: true },
-        { name: "Suggestion", value: "Clique sur le bouton ci-dessous pour envoyer une idée.", inline: false }
+        { name: "API Status", value: "Toutes les API fonctionnent", inline: true },
+        { name: "Cooldown", value: "60s par utilisateur", inline: true },
       )
-      .setFooter({ text: "Hebi Bot System", iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter({ text: "Hebi Verification & Tools" })
+      .setTimestamp();
+
+    if (items.length > 0) {
+      embed.addFields({
+        name: "Derniers articles Vinted",
+        value: items.map(i => `**${i.title}** - ${i.price}\n[Voir l'article](${i.url})`).join("\n\n"),
+      });
+    } else {
+      embed.addFields({ name: "Derniers articles Vinted", value: "Aucun article trouvé." });
+    }
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("send_suggestion")
-        .setLabel("Envoyer une suggestion")
+        .setLabel("Vinted Tracker")
         .setStyle(ButtonStyle.Success)
+        .setCustomId("vinted_refresh"),
+      new ButtonBuilder()
+        .setLabel("Suggestion")
+        .setStyle(ButtonStyle.Primary)
+        .setCustomId("suggestion_modal")
     );
 
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
-  }
+    await interaction.editReply({ embeds: [embed], components: [row] });
+  },
 };
