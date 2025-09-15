@@ -1,16 +1,31 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const sendVerificationEmbed = require("./utils/sendVerificationEmbed");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
-// load events
+client.commands = new Collection();
+client.cooldowns = new Set();
+
+// Charger les commandes
+const commandsPath = path.join(__dirname, "commands");
+for (const file of fs.readdirSync(commandsPath)) {
+  if (file.endsWith(".js")) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.data.name, command);
+  }
+}
+
+// Charger les events
 require("./events/guildMemberAdd")(client);
 
+// Express API
 const app = express();
 app.set("trust proxy", true);
 app.use(cors({ origin: process.env.SITE_ORIGIN || "https://javelin.asia" }));
@@ -58,7 +73,7 @@ app.post("/api/verify", async (req, res) => {
   try {
     const ip = getClientIp(req);
 
-    // vérif captcha
+    // captcha
     const captchaOK = await verifyHCaptcha(captchaToken, ip);
     if (!captchaOK) {
       return res.status(400).json({ success: false, error: "Captcha failed" });
@@ -71,10 +86,8 @@ app.post("/api/verify", async (req, res) => {
     if (role && member) {
       await member.roles.add(role);
 
-      // localisation
       const geo = await geoFromIp(ip);
 
-      // logs
       const channel = guild.channels.cache.get(process.env.LOGS_CHANNEL_ID);
       if (channel) {
         await sendVerificationEmbed(channel, member, {
@@ -107,8 +120,34 @@ app.post("/api/verify", async (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Bot API running on port ${PORT}`));
 
+// Interaction dispatcher
+client.on("interactionCreate", async (interaction) => {
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (command) await command.execute(interaction, client);
+  }
+
+  if (interaction.isButton()) {
+    if (interaction.customId === "suggestion_modal") {
+      return require("./interactions/suggestionModal").execute(interaction);
+    }
+    if (interaction.customId === "bugreport_modal") {
+      return require("./interactions/bugReportModal").execute(interaction);
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === "suggestion_submit") {
+      return require("./interactions/suggestionModal").handleSubmit(interaction);
+    }
+    if (interaction.customId === "bugreport_submit") {
+      return require("./interactions/bugReportModal").handleSubmit(interaction);
+    }
+  }
+});
+
 client.once("ready", () => {
-  console.log(`Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
