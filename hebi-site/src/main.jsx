@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./styles/App.jsx";   // <-- chemin corrigé
-import "./styles/globals.css";       // <-- ton css global
+import App from "./pages/App.jsx";   
+import "./styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
