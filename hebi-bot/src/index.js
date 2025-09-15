@@ -32,6 +32,9 @@ app.set("trust proxy", true);
 app.use(cors({ origin: process.env.SITE_ORIGIN || "https://javelin.asia" }));
 app.use(express.json());
 
+const birthdayChecker = require("./jobs/birthdayChecker");
+setInterval(() => birthdayChecker(client), 1000 * 60 * 60 * 24); // tous les jours
+
 // utils
 function getClientIp(req) {
   const xf = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
@@ -171,4 +174,5 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
