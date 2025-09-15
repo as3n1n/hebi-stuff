@@ -7,8 +7,7 @@ export default function Home() {
         Hebi Bot
       </h1>
       <p className="text-lg text-gray-300 mb-8 max-w-2xl animate-fade-in">
-        Hebi is a Discord bot designed for verification.
-        Simple. Reliable. Fast.
+        Hebi is a Discord bot for verification.
       </p>
       <div className="flex gap-6 animate-fade-in">
         <Link
