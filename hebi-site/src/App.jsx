@@ -11,7 +11,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <BackgroundAnimation />
       <Navbar />
-      <main className="flex-grow relative z-10 pt-20">
+      <main className="flex-grow relative z-10">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/status" element={<Status />} />
