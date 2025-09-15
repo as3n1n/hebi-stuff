@@ -1,48 +1,39 @@
-import { useState } from "react";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
-import Button from "../components/Button";
+import { useState, useRef } from "react";
 import GlowTitle from "../components/GlowTitle";
+import Button from "../components/Button";
 
 export default function Verify() {
-  const [token, setToken] = useState("");
-  const [status, setStatus] = useState("");
+  const captchaRef = useRef(null);
+  const [verified, setVerified] = useState(false);
+  const [error, setError] = useState("");
 
   const handleVerify = async () => {
-    if (!token) {
-      setStatus("Please complete the captcha.");
+    if (!verified) {
+      setError("Please complete captcha first");
       return;
     }
-
-    setStatus("Verifying...");
-    try {
-      const res = await fetch("https://javelin.asia/api/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: "USER_ID",
-          secret: import.meta.env.VITE_API_SECRET,
-          token
-        })
-      });
-      const data = await res.json();
-      setStatus(data.success ? "Verification successful!" : "Verification failed.");
-    } catch {
-      setStatus("Server error.");
-    }
+    setError("");
+    alert("Verification successful!");
   };
 
   return (
-    <div className="w-full max-w-md bg-surface p-8 rounded-2xl shadow-glow animate-fadeInUp">
+    <div className="flex flex-col items-center justify-center py-32 text-center">
       <GlowTitle>Verification</GlowTitle>
-      <p className="text-text-secondary mb-4">Complete the captcha to proceed</p>
-      <div className="flex justify-center mb-4">
+      <p className="mt-4 text-gray-400">
+        Complete captcha to verify your account
+      </p>
+      <div className="mt-6">
         <HCaptcha
-          sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY}
-          onVerify={setToken}
+          sitekey="your-hcaptcha-site-key"
+          onVerify={() => setVerified(true)}
+          ref={captchaRef}
         />
       </div>
-      <Button onClick={handleVerify}>Verify</Button>
-      {status && <p className="mt-4 text-sm">{status}</p>}
+      <div className="mt-6">
+        <Button onClick={handleVerify}>Verify</Button>
+      </div>
+      {error && <p className="text-red-500 mt-4">{error}</p>}
     </div>
   );
 }
