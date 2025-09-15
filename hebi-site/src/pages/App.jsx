@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import Login from "./Login";
+import Home from "./Home";
 import Verify from "./Verify";
 import Invite from "./Invite";
+import About from "./About";
 
 export default function App() {
   return (
@@ -12,9 +13,10 @@ export default function App() {
         <Navbar />
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Home />} />
             <Route path="/verify" element={<Verify />} />
             <Route path="/invite" element={<Invite />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </main>
         <Footer />
