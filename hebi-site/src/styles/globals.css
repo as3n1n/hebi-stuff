@@ -4,14 +4,6 @@
 
 body {
   @apply bg-dark text-lightGray font-sans;
-  background: linear-gradient(to bottom, #0d0d0d, #1a0000);
-  background-attachment: fixed;
-}
-
-.hero-bg {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(to top right, rgba(211,47,47,0.4), transparent);
 }
 
 button, a.btn {
