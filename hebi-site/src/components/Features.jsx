@@ -1,19 +1,26 @@
-export default function Features() {
-  const features = [
-    { title: "Captcha Verification", desc: "Solve a captcha to access the server." },
-    { title: "IP & Proxy Check", desc: "Block VPNs, proxies, and suspicious IPs." },
-    { title: "Alt Account Blocker", desc: "Prevent raids and fake accounts." },
-    { title: "24/7 Protection", desc: "Automated bot protection all the time." },
-  ];
+import { motion } from "framer-motion";
 
+const features = [
+  { title: "Verification", desc: "erification system." },
+  { title: "Invite Bot", desc: "Add Hebi to your Discord server." },
+];
+
+export default function Features() {
   return (
-    <section className="bg-black text-white py-20">
-      <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <section className="py-32 bg-black text-center">
+      <h2 className="text-4xl font-bold glow mb-16">Features</h2>
+      <div className="grid md:grid-cols-3 gap-12 px-10">
         {features.map((f, i) => (
-          <div key={i} className="p-6 bg-dark rounded-xl shadow-lg hover:shadow-red-600/40 transition">
-            <h3 className="text-xl font-bold text-primary mb-3">{f.title}</h3>
-            <p className="text-gray-300">{f.desc}</p>
-          </div>
+          <motion.div
+            key={i}
+            className="p-8 bg-black/60 rounded-2xl shadow-glow"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.2 }}
+          >
+            <h3 className="text-2xl text-hebi font-bold mb-4">{f.title}</h3>
+            <p className="text-gray-400">{f.desc}</p>
+          </motion.div>
         ))}
       </div>
     </section>
