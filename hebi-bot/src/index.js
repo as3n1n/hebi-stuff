@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, Collection } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, REST, Routes } = require("discord.js");
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -146,8 +146,27 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-client.once("ready", () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+// Enregistrer les slash commands au démarrage
+client.once("ready", async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
+  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+
+  const commands = [];
+  for (const [name, cmd] of client.commands) {
+    commands.push(cmd.data.toJSON());
+  }
+
+  try {
+    console.log("Enregistrement des commandes slash...");
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), // ⚡ guild → immédiat
+      { body: commands }
+    );
+    console.log("Slash commands enregistrées !");
+  } catch (err) {
+    console.error("Erreur enregistrement slash:", err);
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
