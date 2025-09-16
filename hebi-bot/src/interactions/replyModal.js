@@ -37,13 +37,13 @@ module.exports = {
       await user.send(`💌 Réponse de l'équipe :\n\n${replyText}`);
 
       await interaction.reply({
-        content: "Message envoyé avec succès !",
+        content: "✅ Message envoyé avec succès !",
         ephemeral: true,
       });
     } catch (err) {
       console.error(err);
       await interaction.reply({
-        content: "Impossible d’envoyer le message.",
+        content: "❌ Impossible d’envoyer le message.",
         ephemeral: true,
       });
     }
