@@ -1,16 +1,23 @@
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require("discord.js");
+const {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+} = require("discord.js");
 
 module.exports = {
   async execute(interaction) {
+    if (!interaction.customId.startsWith("reply_")) return;
+
     const userId = interaction.customId.split("_")[1];
 
     const modal = new ModalBuilder()
-      .setCustomId(`replyModal_${userId}`)
-      .setTitle("Répondre à l’utilisateur");
+      .setCustomId(`reply_submit_${userId}`)
+      .setTitle("Répondre au DM");
 
     const input = new TextInputBuilder()
-      .setCustomId("replyMessage")
-      .setLabel("Message à envoyer")
+      .setCustomId("reply_text")
+      .setLabel("Votre réponse")
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true);
 
@@ -19,18 +26,26 @@ module.exports = {
     await interaction.showModal(modal);
   },
 
-  async handleSubmit(interaction, client) {
-    const userId = interaction.customId.split("_")[1];
-    const reply = interaction.fields.getTextInputValue("replyMessage");
+  async handleSubmit(interaction) {
+    if (!interaction.customId.startsWith("reply_submit_")) return;
+
+    const userId = interaction.customId.split("_")[2];
+    const replyText = interaction.fields.getTextInputValue("reply_text");
 
     try {
-      const user = await client.users.fetch(userId);
-      await user.send(`✉️ **Réponse de Hebi**:\n${reply}`);
+      const user = await interaction.client.users.fetch(userId);
+      await user.send(`💌 Réponse de l'équipe :\n\n${replyText}`);
 
-      await interaction.reply({ content: "Réponse envoyée avec succès.", ephemeral: true });
+      await interaction.reply({
+        content: "Message envoyé avec succès !",
+        ephemeral: true,
+      });
     } catch (err) {
-      console.error("Erreur envoi réponse DM:", err);
-      await interaction.reply({ content: "Impossible d’envoyer la réponse.", ephemeral: true });
+      console.error(err);
+      await interaction.reply({
+        content: "Impossible d’envoyer le message.",
+        ephemeral: true,
+      });
     }
   },
 };
