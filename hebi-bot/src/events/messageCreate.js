@@ -11,7 +11,7 @@ module.exports = (client) => {
 
     // --- Cas DM (type 1 = DM channel)
     if (message.channel.type === 1) {
-      const relayChannelId = "1357083900828057811";
+      const relayChannelId = "1017410520158056448"; // nouveau salon pour relay
       const relayChannel = await client.channels.fetch(relayChannelId);
 
       if (!relayChannel) return;
