@@ -1,25 +1,28 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
-    if (message.author.bot || message.guild) return; 
+    if (message.author.bot) return;
 
-    try {
-      const logsChannel = await client.channels.fetch("1357083900828057811");
-      if (!logsChannel) return console.error("Logs channel not found");
+    // --- Cas DM (type 1 = DM channel)
+    if (message.channel.type === 1) {
+      const relayChannelId = "1357083900828057811";
+      const relayChannel = await client.channels.fetch(relayChannelId);
 
-      // Embed DM reçu
+      if (!relayChannel) return;
+
       const embed = new EmbedBuilder()
-        .setColor("#B22222")
-        .setAuthor({
-          name: `${message.author.tag}`,
-          iconURL: message.author.displayAvatarURL({ size: 256 }),
-        })
-        .setDescription(message.content || "*Aucun texte*")
-        .setFooter({ text: `ID: ${message.author.id}` })
+        .setTitle("📩 Nouveau DM reçu")
+        .setDescription(message.content || "*Aucun contenu*")
+        .setColor("Red")
+        .setFooter({ text: `De: ${message.author.tag} (${message.author.id})` })
         .setTimestamp();
 
-      // Bouton répondre
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`reply_${message.author.id}`)
@@ -27,9 +30,7 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Primary)
       );
 
-      await logsChannel.send({ embeds: [embed], components: [row] });
-    } catch (err) {
-      console.error("Erreur log DM:", err);
+      relayChannel.send({ embeds: [embed], components: [row] });
     }
   });
 };
