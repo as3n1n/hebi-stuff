@@ -150,6 +150,20 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+client.on("interactionCreate", async (interaction) => {
+  if (interaction.isButton()) {
+    if (interaction.customId.startsWith("reply_")) {
+      return require("./interactions/replyModal").execute(interaction);
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith("reply_submit_")) {
+      return require("./interactions/replyModal").handleSubmit(interaction);
+    }
+  }
+});
+
 // Enregistrer les slash commands au démarrage
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -174,5 +188,6 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
