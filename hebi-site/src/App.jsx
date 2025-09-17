@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Docs from "./pages/Docs";
+import Faq from "./pages/Faq"; // 👈 nouvelle page FAQ
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
             <Link to="/" className="hover:text-red-500">Home</Link>
             <Link to="/upload" className="hover:text-red-500">Upload</Link>
             <Link to="/docs" className="hover:text-red-500">Docs</Link>
+            <Link to="/faq" className="hover:text-red-500">FAQ</Link>
           </nav>
         </header>
 
@@ -23,6 +25,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/docs" element={<Docs />} />
+            <Route path="/faq" element={<Faq />} /> 
           </Routes>
         </main>
 
