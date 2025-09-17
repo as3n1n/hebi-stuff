@@ -14,16 +14,12 @@ export default function KeyGuard({ children }) {
 
     fetch("https://api.javelin.asia/validate-key", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key }),
+      headers: { "Content-Type": "application/json", "x-api-key": key }
     })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) {
-          setValid(true);
-        } else {
-          navigate("/banned");
-        }
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setValid(true);
+        else navigate("/banned");
       })
       .catch(() => navigate("/banned"));
   }, []);
