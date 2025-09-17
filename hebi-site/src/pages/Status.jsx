@@ -6,7 +6,7 @@ export default function Status() {
 
   async function fetchStatus() {
     try {
-      const res = await fetch("https://api.javelin.asia/api/status");
+      const res = await fetch("https://upload.javelin.asia/api/status");
       const data = await res.json();
       setStatus(data);
       setLastUpdate(new Date().toLocaleString());
