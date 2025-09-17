@@ -7,6 +7,8 @@ export default function Upload() {
   const [error, setError] = useState(null);
   const dropRef = useRef(null);
 
+  const API_URL = import.meta.env.VITE_API_URL; // lit l’URL depuis Render
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setResult(null);
@@ -44,7 +46,7 @@ export default function Upload() {
     formData.append("fileToUpload", file);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/fileupload`, {
+      const res = await fetch(`${API_URL}/api/fileupload`, {
         method: "POST",
         body: formData,
       });
@@ -124,8 +126,8 @@ export default function Upload() {
             {result.preview}
           </a>
 
-          <p className="text-xs text-gray-500 mt-2">
-            This file will be automatically deleted after 7 days.
+          <p className="text-xs text-gray-500 mt-3">
+            ⏳ File will expire in {result.expiresIn}
           </p>
         </div>
       )}
