@@ -97,7 +97,7 @@ app.post("/api/alert", async (req, res) => {
 });
 
 //
-// 📂 NEW: Upload logs from Hebi API
+// 📂 Upload logs depuis Hebi API
 //
 app.post("/api/upload-log", async (req, res) => {
   try {
@@ -135,12 +135,6 @@ app.post("/api/upload-log", async (req, res) => {
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
-
-//
-// Express server
-//
-const ALERT_PORT = process.env.ALERT_PORT || 3002;
-app.listen(ALERT_PORT, () => console.log(`Bot listener running on ${ALERT_PORT}`));
 
 // 🔐 Middleware de protection (sauf upload logs)
 const protectedRoutes = ["/api/verify"];
@@ -236,5 +230,9 @@ client.once("ready", async () => {
     console.error("Erreur enregistrement slash:", err);
   }
 });
+
+// 🎯 Un seul serveur Express exposé sur Render
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Bot API + Alert listener running on port ${PORT}`));
 
 client.login(process.env.DISCORD_TOKEN);
