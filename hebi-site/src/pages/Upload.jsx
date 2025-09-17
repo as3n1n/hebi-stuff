@@ -1,7 +1,5 @@
 import { useState, useRef } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -46,7 +44,7 @@ export default function Upload() {
     formData.append("fileToUpload", file);
 
     try {
-      const res = await fetch(`${API_URL}/api/fileupload`, {
+      const res = await fetch("https://api.javelin.asia/api/fileupload", {
         method: "POST",
         body: formData,
       });
@@ -127,7 +125,7 @@ export default function Upload() {
           </a>
 
           <p className="text-xs text-gray-500 mt-4">
-            ⚠️ This file will be deleted automatically after 7 days.
+            ⚠️ File expires in {result.expiresIn}
           </p>
         </div>
       )}
