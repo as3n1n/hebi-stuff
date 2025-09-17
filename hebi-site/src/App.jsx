@@ -14,7 +14,14 @@ export default function App() {
       <div className="bg-black text-white min-h-screen flex flex-col">
         {/* Navbar */}
         <header className="bg-zinc-950 border-b border-zinc-800 p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-red-600">Hebi</h1>
+          <a href="https://javelin.asia" className="flex items-center space-x-2">
+            <img
+              src="/logo.png" // ⚠️ Mets ton logo ici dans /public/logo.png
+              alt="Hebi Logo"
+              className="h-8 w-8"
+            />
+            <span className="text-xl font-bold text-red-600">Hebi</span>
+          </a>
           <nav className="space-x-6">
             <Link to="/" className="hover:text-red-500 transition">Home</Link>
             <Link to="/upload" className="hover:text-red-500 transition">Upload</Link>
