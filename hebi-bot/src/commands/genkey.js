@@ -1,25 +1,25 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const { generateKey } = require("../utils/keyManager");
+const crypto = require("crypto");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("genkey")
-    .setDescription("Generate a new site access key (Admins only)")
+    .setName("generatepassword")
+    .setDescription("Generate a random password (Admins only)")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    const key = generateKey(interaction.user.id);
-
-    if (!key) {
-      return interaction.reply({
-        content: "❌ Failed to generate key (check API logs).",
-        ephemeral: true
+    try {
+      const password = crypto.randomBytes(12).toString("base64url"); // exemple 16 chars random
+      await interaction.reply({
+        content: `🔑 Generated password:\n\`\`\`${password}\`\`\``,
+        ephemeral: true,
+      });
+    } catch (err) {
+      console.error("Failed to generate password:", err);
+      await interaction.reply({
+        content: "❌ Failed to generate password.",
+        ephemeral: true,
       });
     }
-
-    await interaction.reply({
-      content: `✅ New key generated:\n\`\`\`${key}\`\`\``,
-      ephemeral: true
-    });
-  }
+  },
 };
