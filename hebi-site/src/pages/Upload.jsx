@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 
 export default function Upload() {
   const [file, setFile] = useState(null);
+  const [url, setUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -9,8 +10,10 @@ export default function Upload() {
 
   const API_URL = import.meta.env.VITE_API_URL || "https://upload.javelin.asia";
 
+  // 📂 Gestion fichier local
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+    setUrl("");
     setResult(null);
     setError(null);
   };
@@ -21,6 +24,7 @@ export default function Upload() {
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       setFile(droppedFile);
+      setUrl("");
       setResult(null);
       setError(null);
     }
@@ -36,20 +40,36 @@ export default function Upload() {
     dropRef.current.classList.remove("border-red-500");
   };
 
+  // 🚀 Upload (fichier ou URL)
   const handleUpload = async () => {
-    if (!file) return setError("Please choose or drop a file first.");
+    if (!file && !url) {
+      return setError("Please choose a file or enter a URL first.");
+    }
+
     setUploading(true);
     setError(null);
     setResult(null);
 
-    const formData = new FormData();
-    formData.append("fileToUpload", file);
-
     try {
-      const res = await fetch(`${API_URL}/api/fileupload`, {
-        method: "POST",
-        body: formData,
-      });
+      let res;
+
+      if (file) {
+        // Fichier local
+        const formData = new FormData();
+        formData.append("fileToUpload", file);
+
+        res = await fetch(`${API_URL}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+      } else if (url) {
+        // Upload par URL
+        res = await fetch(`${API_URL}/urlupload`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+      }
 
       const data = await res.json();
       if (data.success) {
@@ -58,6 +78,7 @@ export default function Upload() {
         setError(data.error || "Upload failed.");
       }
     } catch (err) {
+      console.error(err);
       setError("Error uploading file.");
     }
 
@@ -91,6 +112,22 @@ export default function Upload() {
           className="hidden"
         />
       </div>
+
+      <p className="text-gray-500 my-4">— or —</p>
+
+      {/* Upload via URL */}
+      <input
+        type="text"
+        placeholder="Paste a video/image URL (Instagram, TikTok, YouTube, etc)"
+        value={url}
+        onChange={(e) => {
+          setUrl(e.target.value);
+          setFile(null);
+          setResult(null);
+          setError(null);
+        }}
+        className="w-full max-w-xl px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white"
+      />
 
       {/* Bouton Upload */}
       <button
