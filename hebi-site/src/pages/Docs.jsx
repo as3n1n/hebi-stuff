@@ -8,6 +8,7 @@ export default function Docs() {
           <a href="#intro" className="block hover:text-red-500">Introduction</a>
           <a href="#fileupload" className="block hover:text-red-500">File Upload</a>
           <a href="#urlupload" className="block hover:text-red-500">URL Upload</a>
+          <a href="#delete" className="block hover:text-red-500">Delete File</a>
           <a href="#status" className="block hover:text-red-500">Status</a>
           <a href="#curl" className="block hover:text-red-500">cURL Examples</a>
         </nav>
@@ -24,6 +25,36 @@ export default function Docs() {
             https://upload.javelin.asia
           </code>
         </p>
+
+        {/* Introduction */}
+        <section className="mb-10">
+          <h2 className="text-2xl text-red-500 mb-2">Introduction</h2>
+          <p className="mb-4">
+            The Hebi API allows you to upload and share files temporarily.
+            Files are automatically deleted after 7 days.
+          </p>
+          <p className="mb-4">
+            You can interact with the API using <code>curl</code>, a simple
+            command-line tool that allows you to send requests to web servers.
+          </p>
+          <ul className="list-disc list-inside mb-4">
+            <li>
+              <b>POST</b>: send data (like uploading a file).
+            </li>
+            <li>
+              <b>GET</b>: retrieve data (like checking status or downloading a file).
+            </li>
+            <li>
+              <b>DELETE</b>: remove a file you uploaded.
+            </li>
+          </ul>
+          <p>
+            Example: <br />
+            <code className="bg-zinc-900 px-2 py-1 rounded">
+              curl -F "fileToUpload=@test.png" https://upload.javelin.asia/upload
+            </code>
+          </p>
+        </section>
 
         {/* File Upload */}
         <section id="fileupload" className="mb-10">
@@ -56,6 +87,24 @@ Body: JSON
           </pre>
         </section>
 
+        {/* Delete */}
+        <section id="delete" className="mb-10">
+          <h2 className="text-2xl text-red-500 mb-2">Delete File</h2>
+          <p>
+            Delete a file manually before it expires. Requires a valid{" "}
+            <code>x-api-key</code> header.
+          </p>
+          <pre className="bg-zinc-900 p-4 rounded mt-2 text-sm overflow-x-auto">
+{`DELETE /delete/:filename
+Headers:
+  x-api-key: YOUR_SECRET_KEY
+
+Example:
+curl -X DELETE https://upload.javelin.asia/delete/test.png \\
+  -H "x-api-key: YOUR_SECRET_KEY"`}
+          </pre>
+        </section>
+
         {/* Status */}
         <section id="status" className="mb-10">
           <h2 className="text-2xl text-red-500 mb-2">API Status</h2>
@@ -78,7 +127,11 @@ curl -F "fileToUpload=@test.png" https://upload.javelin.asia/upload
 # Upload via URL
 curl -X POST https://upload.javelin.asia/urlupload \\
   -H "Content-Type: application/json" \\
-  -d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'`}
+  -d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+
+# Delete a file
+curl -X DELETE https://upload.javelin.asia/delete/test.png \\
+  -H "x-api-key: YOUR_SECRET_KEY"`}
           </pre>
         </section>
       </main>
