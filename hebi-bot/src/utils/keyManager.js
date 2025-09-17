@@ -1,26 +1,52 @@
+const fs = require("fs");
+const path = require("path");
 const crypto = require("crypto");
 
-// keys stockées en mémoire { key: { ownerId, createdAt, lastIp } }
-let keys = new Map();
+// chemin vers le fichier partagé avec hebi-api
+const keysPath = path.join(__dirname, "../../hebi-api/data/keys.json");
+
+function readJSON(file, fallback) {
+  if (!fs.existsSync(file)) return fallback;
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
 
 function generateKey(ownerId) {
+  const keys = readJSON(keysPath, {});
   const key = crypto.randomBytes(24).toString("hex");
-  keys.set(key, { ownerId, createdAt: new Date(), lastIp: null });
+
+  keys[key] = {
+    ownerId,
+    createdAt: new Date().toISOString(),
+    lastIp: null
+  };
+
+  writeJSON(keysPath, keys);
   return key;
 }
 
 function validateKey(key, ip) {
-  const record = keys.get(key);
+  const keys = readJSON(keysPath, {});
+  const record = keys[key];
   if (!record) return false;
+
   if (record.lastIp && record.lastIp !== ip) {
     return false; // ip mismatch
   }
+
   record.lastIp = ip;
+  keys[key] = record;
+  writeJSON(keysPath, keys);
+
   return true;
 }
 
 function getOwner(key) {
-  return keys.get(key)?.ownerId || null;
+  const keys = readJSON(keysPath, {});
+  return keys[key]?.ownerId || null;
 }
 
 module.exports = { generateKey, validateKey, getOwner };
