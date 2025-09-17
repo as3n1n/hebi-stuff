@@ -44,7 +44,7 @@ export default function Upload() {
     formData.append("fileToUpload", file);
 
     try {
-      const res = await fetch("https://api.javelin.asia/api/fileupload", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/fileupload`, {
         method: "POST",
         body: formData,
       });
@@ -101,9 +101,8 @@ export default function Upload() {
 
       {/* Résultat */}
       {result && (
-        <div className="mt-8 bg-zinc-900 p-6 rounded-xl w-full max-w-xl text-center space-y-2">
-          <p className="text-green-400 font-bold">Upload successful!</p>
-          <p className="text-gray-400 text-sm">Expires in {result.expiresIn}</p>
+        <div className="mt-8 bg-zinc-900 p-6 rounded-xl w-full max-w-xl text-center">
+          <p className="text-green-400 font-bold mb-2">Upload successful!</p>
 
           <p className="text-sm text-gray-400">Direct link:</p>
           <a
@@ -115,7 +114,7 @@ export default function Upload() {
             {result.url}
           </a>
 
-          <p className="text-sm text-gray-400 mt-3">Preview link:</p>
+          <p className="text-sm text-gray-400 mt-4">Preview link:</p>
           <a
             href={result.preview}
             target="_blank"
@@ -124,11 +123,17 @@ export default function Upload() {
           >
             {result.preview}
           </a>
+
+          <p className="text-xs text-gray-500 mt-2">
+            This file will be automatically deleted after 7 days.
+          </p>
         </div>
       )}
 
       {/* Erreur */}
-      {error && <div className="mt-6 text-red-500 font-semibold">{error}</div>}
+      {error && (
+        <div className="mt-6 text-red-500 font-semibold">{error}</div>
+      )}
     </div>
   );
 }
