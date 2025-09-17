@@ -6,9 +6,14 @@ const keysPath = path.join(__dirname, "../data/keys.json");
 const bansPath = path.join(__dirname, "../data/bans.json");
 
 function readJSON(file, fallback) {
-  if (!fs.existsSync(file)) return fallback;
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  try {
+    if (!fs.existsSync(file)) return fallback;
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
 }
+
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
@@ -57,9 +62,12 @@ function auth(req, res, next) {
     return next();
   }
 
-  // IP mismatch → ban
-  bans.push(ip);
-  writeJSON(bansPath, bans);
+  // IP mismatch → ban new IP + remove key
+  if (!bans.includes(ip)) {
+    bans.push(ip);
+    writeJSON(bansPath, bans);
+  }
+
   const owner = keys[key].ownerId;
   delete keys[key];
   writeJSON(keysPath, keys);
