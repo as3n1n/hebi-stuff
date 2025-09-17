@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const mime = require("mime-types");
+const fetch = require("node-fetch"); // ➡️ pour récupérer fichiers distants
 
 const app = express();
 
@@ -11,7 +12,7 @@ const app = express();
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
-// 📄 Metadata des fichiers (date d'upload)
+// 📄 Metadata des fichiers
 const META_PATH = path.join(UPLOADS_DIR, "metadata.json");
 if (!fs.existsSync(META_PATH)) fs.writeFileSync(META_PATH, "{}");
 
@@ -22,11 +23,9 @@ function writeMeta(data) {
   fs.writeFileSync(META_PATH, JSON.stringify(data, null, 2));
 }
 
-// 📦 Multer config → conserve extension
+// 📦 Multer config
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOADS_DIR);
-  },
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -48,11 +47,10 @@ const BASE_URL = "https://upload.javelin.asia";
 // ✅ Root test
 app.get("/", (req, res) => res.send("✅ Hebi Upload is running"));
 
-// ✅ File upload (nouvelle route simplifiée)
+// ✅ File upload
 app.post("/upload", upload.single("fileToUpload"), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
 
-  // Ajout metadata
   const meta = readMeta();
   meta[req.file.filename] = { uploadedAt: Date.now() };
   writeMeta(meta);
@@ -60,13 +58,50 @@ app.post("/upload", upload.single("fileToUpload"), (req, res) => {
   const fileUrl = `${BASE_URL}/files/${req.file.filename}`;
   const previewUrl = `${BASE_URL}/f/${req.file.filename}`;
 
-  return res.json({
-    success: true,
-    file: req.file.filename,
-    url: fileUrl,
-    preview: previewUrl,
-    expiresIn: "7 days",
-  });
+  res.json({ success: true, url: fileUrl, preview: previewUrl, expiresIn: "7 days" });
+});
+
+// ✅ Upload depuis une URL (Insta / TikTok / YT / FB…)
+app.post("/urlupload", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ success: false, error: "No URL provided" });
+
+    // Téléchargement
+    const response = await fetch(url);
+    if (!response.ok) return res.status(400).json({ success: false, error: "Failed to fetch URL" });
+
+    // Vérif taille
+    const size = response.headers.get("content-length");
+    if (size && parseInt(size) > 200 * 1024 * 1024) {
+      return res.status(400).json({ success: false, error: "File too large (max 200MB)" });
+    }
+
+    // Extension approximative
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    const ext = mime.extension(contentType) ? "." + mime.extension(contentType) : "";
+
+    // Nom unique
+    const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    // Sauvegarde fichier
+    const buffer = await response.buffer();
+    fs.writeFileSync(filePath, buffer);
+
+    // Ajout metadata
+    const meta = readMeta();
+    meta[filename] = { uploadedAt: Date.now(), source: url };
+    writeMeta(meta);
+
+    const fileUrl = `${BASE_URL}/files/${filename}`;
+    const previewUrl = `${BASE_URL}/f/${filename}`;
+
+    res.json({ success: true, url: fileUrl, preview: previewUrl, expiresIn: "7 days" });
+  } catch (err) {
+    console.error("URL upload error:", err);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
 });
 
 // ✅ Serve raw files
@@ -79,10 +114,10 @@ app.get("/files/:filename", (req, res) => {
   res.setHeader("Content-Disposition", "inline");
   res.setHeader("Cache-Control", "public, max-age=31536000");
 
-  return res.sendFile(filePath);
+  res.sendFile(filePath);
 });
 
-// ✅ Serve preview (Discord embed)
+// ✅ Preview
 app.get("/f/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
@@ -134,28 +169,22 @@ app.get("/status", (req, res) => {
     deletedToday = lines.filter((l) => l.includes(today)).length;
   }
 
-  res.json({
-    api: "online",
-    filesCount,
-    deletedToday,
-    timestamp: new Date(),
-  });
+  res.json({ api: "online", filesCount, deletedToday, timestamp: new Date() });
 });
 
-// 🧹 Cron → suppression auto après 7 jours
+// 🧹 Cron → auto delete après 7 jours
 setInterval(() => {
   const meta = readMeta();
   const now = Date.now();
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
   let changed = false;
+
   for (const [filename, info] of Object.entries(meta)) {
     if (now - info.uploadedAt > sevenDays) {
       const filePath = path.join(UPLOADS_DIR, filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       delete meta[filename];
       changed = true;
-
       fs.appendFileSync(path.join(UPLOADS_DIR, "deletion.log"), `${new Date().toISOString()} - Deleted ${filename}\n`);
       console.log(`🗑️ Deleted expired file: ${filename}`);
     }
