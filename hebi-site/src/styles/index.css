@@ -1,0 +1,36 @@
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------ Hebi theme helpers (optionnel) ------ */
+
+:root {
+  --hebi-red: #e11d48; /* tailwind rose-600-ish mais plus “rouge” */
+  --hebi-dark: #0b0b0b;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--hebi-dark);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* liens */
+a {
+  color: var(--hebi-red);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* petit glow rouge si tu veux l'utiliser sur des titres / logos */
+.hebi-glow {
+  text-shadow: 0 0 18px rgba(225, 29, 72, 0.45);
+}
