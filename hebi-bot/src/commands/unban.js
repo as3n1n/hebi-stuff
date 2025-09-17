@@ -14,7 +14,7 @@ module.exports = {
     const ip = interaction.options.getString("ip");
 
     try {
-      const res = await fetch(process.env.API_URL + "/api/unban", {
+      const res = await fetch(`${process.env.API_URL}/api/unban`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -27,7 +27,7 @@ module.exports = {
       if (data.success) {
         await interaction.reply(`✅ IP \`${ip}\` has been unbanned.`);
       } else {
-        await interaction.reply(`❌ Failed: ${data.error}`);
+        await interaction.reply(`❌ Failed: ${data.error || "Unknown error"}`);
       }
     } catch (err) {
       console.error(err);
