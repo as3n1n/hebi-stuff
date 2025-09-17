@@ -7,6 +7,8 @@ export default function Upload() {
   const [error, setError] = useState(null);
   const dropRef = useRef(null);
 
+  const API_URL = import.meta.env.VITE_API_URL || "https://upload.javelin.asia";
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setResult(null);
@@ -44,7 +46,7 @@ export default function Upload() {
     formData.append("fileToUpload", file);
 
     try {
-      const res = await fetch("https://api.javelin.asia/api/fileupload", {
+      const res = await fetch(`${API_URL}/api/fileupload`, {
         method: "POST",
         body: formData,
       });
@@ -124,8 +126,8 @@ export default function Upload() {
             {result.preview}
           </a>
 
-          <p className="text-xs text-gray-500 mt-4">
-            ⚠️ File expires in {result.expiresIn}
+          <p className="text-gray-500 text-xs mt-4">
+            This file will be deleted automatically in {result.expiresIn}.
           </p>
         </div>
       )}
