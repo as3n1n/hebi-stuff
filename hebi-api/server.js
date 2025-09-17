@@ -28,9 +28,9 @@ const storage = multer.diskStorage({
     cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname); // récupère extension (.png, .mp4, .mov…)
+    const ext = path.extname(file.originalname); // garde l’extension (.png, .mp4, .mov…)
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, unique + ext); // garde l’extension
+    cb(null, unique + ext);
   },
 });
 
@@ -41,6 +41,9 @@ const upload = multer({
 
 app.use(cors({ origin: ["https://javelin.asia", "https://www.javelin.asia"], credentials: true }));
 app.use(express.json());
+
+// 🌐 Base URL
+const BASE_URL = "https://upload.javelin.asia";
 
 // ✅ Root test
 app.get("/", (req, res) => res.send("✅ Hebi API is running"));
@@ -54,8 +57,8 @@ app.post("/api/fileupload", upload.single("fileToUpload"), (req, res) => {
   meta[req.file.filename] = { uploadedAt: Date.now() };
   writeMeta(meta);
 
-  const fileUrl = `https://api.javelin.asia/files/${req.file.filename}`;
-  const previewUrl = `https://api.javelin.asia/f/${req.file.filename}`;
+  const fileUrl = `${BASE_URL}/files/${req.file.filename}`;
+  const previewUrl = `${BASE_URL}/f/${req.file.filename}`;
 
   return res.json({
     success: true,
@@ -85,7 +88,7 @@ app.get("/f/:filename", (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
 
   const mimeType = mime.lookup(filePath) || "application/octet-stream";
-  const fileUrl = `https://api.javelin.asia/files/${req.params.filename}`;
+  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
 
   let metaTags = `
     <meta property="og:title" content="Hebi File" />
