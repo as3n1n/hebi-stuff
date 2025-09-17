@@ -12,7 +12,7 @@ const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
 // 📄 Metadata des fichiers (date d'upload)
-const META_PATH = path.join(__dirname, "uploads", "metadata.json");
+const META_PATH = path.join(UPLOADS_DIR, "metadata.json");
 if (!fs.existsSync(META_PATH)) fs.writeFileSync(META_PATH, "{}");
 
 function readMeta() {
@@ -37,7 +37,7 @@ app.use(
 app.use(express.json());
 
 // ✅ Root test
-app.get("/", (req, res) => res.send("Hebi API is running"));
+app.get("/", (req, res) => res.send("✅ Hebi API is running"));
 
 // ✅ File upload
 app.post("/api/fileupload", upload.single("fileToUpload"), (req, res) => {
@@ -113,6 +113,29 @@ app.get("/f/:filename", (req, res) => {
   `);
 });
 
+// ✅ Status route
+app.get("/api/status", (req, res) => {
+  const meta = readMeta();
+  const filesCount = Object.keys(meta).length;
+
+  // calcul fichiers supprimés aujourd’hui
+  const today = new Date().toDateString();
+  const logFile = path.join(UPLOADS_DIR, "deletion.log");
+
+  let deletedToday = 0;
+  if (fs.existsSync(logFile)) {
+    const lines = fs.readFileSync(logFile, "utf8").split("\n");
+    deletedToday = lines.filter((l) => l.includes(today)).length;
+  }
+
+  res.json({
+    api: "online",
+    filesCount,
+    deletedToday,
+    timestamp: new Date(),
+  });
+});
+
 // 🧹 Cron → suppression auto après 7 jours
 setInterval(() => {
   const meta = readMeta();
@@ -126,6 +149,13 @@ setInterval(() => {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       delete meta[filename];
       changed = true;
+
+      // log suppression
+      fs.appendFileSync(
+        path.join(UPLOADS_DIR, "deletion.log"),
+        `${new Date().toISOString()} - Deleted ${filename}\n`
+      );
+
       console.log(`🗑️ Deleted expired file: ${filename}`);
     }
   }
@@ -134,4 +164,4 @@ setInterval(() => {
 }, 1000 * 60 * 60); // toutes les heures
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Hebi API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Hebi API running on port ${PORT}`));
