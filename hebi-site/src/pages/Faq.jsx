@@ -50,17 +50,19 @@ export default function Faq() {
         {faqs.map((faq, i) => (
           <div
             key={i}
-            className="border border-gray-800 rounded-lg overflow-hidden bg-[#101010]"
+            className="border border-zinc-800 rounded-lg overflow-hidden bg-[#101010]"
           >
             <button
               onClick={() => toggle(i)}
-              className="w-full text-left px-6 py-4 font-semibold text-lg flex justify-between items-center hover:bg-[#181818]"
+              className="w-full text-left px-6 py-4 font-semibold text-lg flex justify-between items-center hover:bg-[#181818] transition"
             >
               <span>{faq.question}</span>
-              <span className="text-red-600">{openIndex === i ? "−" : "+"}</span>
+              <span className="text-red-600 text-2xl">
+                {openIndex === i ? "−" : "+"}
+              </span>
             </button>
             {openIndex === i && (
-              <div className="px-6 pb-4 text-gray-300">{faq.answer}</div>
+              <div className="px-6 pb-4 text-gray-400">{faq.answer}</div>
             )}
           </div>
         ))}
