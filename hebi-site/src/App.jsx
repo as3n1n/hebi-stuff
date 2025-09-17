@@ -5,6 +5,8 @@ import Docs from "./pages/Docs";
 import Status from "./pages/Status";
 import Contact from "./pages/Contact";
 import Faq from "./pages/Faq";
+import Tos from "./pages/Tos";
+import Privacy from "./pages/Privacy";
 
 export default function App() {
   return (
@@ -20,6 +22,8 @@ export default function App() {
             <Link to="/status" className="hover:text-red-500 transition">Status</Link>
             <Link to="/contact" className="hover:text-red-500 transition">Contact</Link>
             <Link to="/faq" className="hover:text-red-500 transition">FAQ</Link>
+            <Link to="/tos" className="hover:text-red-500 transition">TOS</Link>
+            <Link to="/privacy" className="hover:text-red-500 transition">Privacy</Link>
           </nav>
         </header>
 
@@ -32,6 +36,8 @@ export default function App() {
             <Route path="/status" element={<Status />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/faq" element={<Faq />} />
+            <Route path="/tos" element={<Tos />} />
+            <Route path="/privacy" element={<Privacy />} />
           </Routes>
         </main>
 
