@@ -28,12 +28,7 @@ const upload = multer({
   limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 });
 
-app.use(
-  cors({
-    origin: ["https://javelin.asia", "https://www.javelin.asia"],
-    credentials: true,
-  })
-);
+app.use(cors({ origin: ["https://javelin.asia", "https://www.javelin.asia"], credentials: true }));
 app.use(express.json());
 
 // ✅ Root test
@@ -41,11 +36,9 @@ app.get("/", (req, res) => res.send("✅ Hebi API is running"));
 
 // ✅ File upload
 app.post("/api/fileupload", upload.single("fileToUpload"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, error: "No file uploaded" });
-  }
+  if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
 
-  // Ajout dans metadata
+  // Ajout metadata
   const meta = readMeta();
   meta[req.file.filename] = { uploadedAt: Date.now() };
   writeMeta(meta);
@@ -118,7 +111,6 @@ app.get("/api/status", (req, res) => {
   const meta = readMeta();
   const filesCount = Object.keys(meta).length;
 
-  // calcul fichiers supprimés aujourd’hui
   const today = new Date().toDateString();
   const logFile = path.join(UPLOADS_DIR, "deletion.log");
 
@@ -150,12 +142,7 @@ setInterval(() => {
       delete meta[filename];
       changed = true;
 
-      // log suppression
-      fs.appendFileSync(
-        path.join(UPLOADS_DIR, "deletion.log"),
-        `${new Date().toISOString()} - Deleted ${filename}\n`
-      );
-
+      fs.appendFileSync(path.join(UPLOADS_DIR, "deletion.log"), `${new Date().toISOString()} - Deleted ${filename}\n`);
       console.log(`🗑️ Deleted expired file: ${filename}`);
     }
   }
