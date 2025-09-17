@@ -69,6 +69,7 @@ async function verifyHCaptcha(token, ip) {
 
 const { validateKey } = require("./utils/keyManager");
 
+// 🚨 ALERT SYSTEM
 app.post("/api/alert", async (req, res) => {
   const { userId, ip, reason } = req.body;
 
@@ -81,9 +82,9 @@ app.post("/api/alert", async (req, res) => {
             title: "Hebi API Security Alert",
             description: `A suspicious action was detected.\n\n**Reason:** ${reason}\n**IP:** ${ip}`,
             color: 0xff0000,
-            timestamp: new Date().toISOString()
-          }
-        ]
+            timestamp: new Date().toISOString(),
+          },
+        ],
       });
     }
   } catch (err) {
@@ -96,9 +97,11 @@ app.post("/api/alert", async (req, res) => {
 const ALERT_PORT = process.env.ALERT_PORT || 3002;
 app.listen(ALERT_PORT, () => console.log(`Bot alert listener running on ${ALERT_PORT}`));
 
-// Middleware de protection par clé + IP
+// 🔐 Middleware de protection (sauf upload)
+const protectedRoutes = ["/api/verify"]; // liste des routes protégées
+
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/")) {
+  if (protectedRoutes.includes(req.path)) {
     const key = req.headers["x-api-key"];
     const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
 
@@ -109,7 +112,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// verify endpoint
+// ✅ VERIFY endpoint (protégé)
 app.post("/api/verify", async (req, res) => {
   const { userId, secret, captchaToken } = req.body;
   if (secret !== process.env.API_SECRET) {
@@ -166,7 +169,7 @@ app.post("/api/verify", async (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Bot API running on port ${PORT}`));
 
-// Interaction dispatcher
+// 🔥 Interaction dispatcher
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
@@ -206,7 +209,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// Enregistrer les slash commands au démarrage
+// ✅ Register slash commands
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
@@ -220,7 +223,7 @@ client.once("ready", async () => {
   try {
     console.log("Enregistrement des commandes slash...");
     await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), // ⚡ guild → immédiat
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
       { body: commands }
     );
     console.log("Slash commands enregistrées !");
@@ -230,8 +233,3 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
-
-
-
-
