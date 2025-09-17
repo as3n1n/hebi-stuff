@@ -12,7 +12,7 @@ const nsfw = require("nsfwjs");
 
 const app = express();
 
-// 📂 Dossier uploads (⚡ utiliser /data/uploads si Persistent Disk Render)
+// 📂 Dossier uploads
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
@@ -42,7 +42,7 @@ async function analyzeFile(filePath, ext) {
   if (ext === ".zip") {
     try {
       const zip = new AdmZip(filePath);
-      analysis.contents = zip.getEntries().map(e => e.entryName);
+      analysis.contents = zip.getEntries().map((e) => e.entryName);
     } catch {
       analysis.contents = ["Error reading archive"];
     }
@@ -60,7 +60,7 @@ async function analyzeFile(filePath, ext) {
       image.dispose();
 
       analysis.nsfw = predictions.map(
-        p => `${p.className}: ${(p.probability * 100).toFixed(2)}%`
+        (p) => `${p.className}: ${(p.probability * 100).toFixed(2)}%`
       );
     } catch (err) {
       analysis.nsfw = ["NSFW scan failed"];
@@ -119,9 +119,17 @@ const storage = multer.diskStorage({
     cb(null, unique + ext);
   },
 });
-const upload = multer({ storage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
+const upload = multer({
+  storage,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
+});
 
-app.use(cors({ origin: ["https://javelin.asia", "https://www.javelin.asia"], credentials: true }));
+app.use(
+  cors({
+    origin: ["https://javelin.asia", "https://www.javelin.asia"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const BASE_URL = "https://upload.javelin.asia";
@@ -131,7 +139,8 @@ app.get("/", (req, res) => res.send("✅ Hebi Upload is running"));
 
 // ✅ Upload fichier local
 app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
+  if (!req.file)
+    return res.status(400).json({ success: false, error: "No file uploaded" });
 
   const filePath = path.join(UPLOADS_DIR, req.file.filename);
   const ext = path.extname(req.file.originalname).toLowerCase();
@@ -140,33 +149,57 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
   const analysis = await analyzeFile(filePath, ext);
 
   const meta = readMeta();
-  meta[req.file.filename] = { uploadedAt: Date.now(), hashes, analysis };
+  meta[req.file.filename] = {
+    uploadedAt: Date.now(),
+    hashes,
+    analysis,
+    isScreenshot: req.query.ss === "1" || false, // ⚡ si screenshot
+  };
   writeMeta(meta);
 
   await logToDiscord(req.file.filename, hashes, analysis);
 
   const fileUrl = `${BASE_URL}/files/${req.file.filename}`;
-  const previewUrl = `${BASE_URL}/f/${req.file.filename}`;
+  const previewUrl = meta[req.file.filename].isScreenshot
+    ? `${BASE_URL}/ss/${req.file.filename}`
+    : `${BASE_URL}/f/${req.file.filename}`;
 
-  res.json({ success: true, url: fileUrl, preview: previewUrl, analysis, expiresIn: "7 days" });
+  res.json({
+    success: true,
+    url: fileUrl,
+    preview: previewUrl,
+    analysis,
+    expiresIn: meta[req.file.filename].isScreenshot ? "2 days" : "7 days",
+  });
 });
 
 // ✅ Upload depuis une URL
 app.post("/urlupload", async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ success: false, error: "No URL provided" });
+    if (!url)
+      return res
+        .status(400)
+        .json({ success: false, error: "No URL provided" });
 
     const response = await fetch(url);
-    if (!response.ok) return res.status(400).json({ success: false, error: "Failed to fetch URL" });
+    if (!response.ok)
+      return res
+        .status(400)
+        .json({ success: false, error: "Failed to fetch URL" });
 
     const size = response.headers.get("content-length");
     if (size && parseInt(size) > 200 * 1024 * 1024) {
-      return res.status(400).json({ success: false, error: "File too large (max 200MB)" });
+      return res
+        .status(400)
+        .json({ success: false, error: "File too large (max 200MB)" });
     }
 
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
-    const ext = mime.extension(contentType) ? "." + mime.extension(contentType) : "";
+    const contentType =
+      response.headers.get("content-type") || "application/octet-stream";
+    const ext = mime.extension(contentType)
+      ? "." + mime.extension(contentType)
+      : "";
 
     const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
     const filePath = path.join(UPLOADS_DIR, filename);
@@ -178,7 +211,13 @@ app.post("/urlupload", async (req, res) => {
     const analysis = await analyzeFile(filePath, ext);
 
     const meta = readMeta();
-    meta[filename] = { uploadedAt: Date.now(), source: url, hashes, analysis };
+    meta[filename] = {
+      uploadedAt: Date.now(),
+      source: url,
+      hashes,
+      analysis,
+      isScreenshot: false,
+    };
     writeMeta(meta);
 
     await logToDiscord(filename, hashes, analysis);
@@ -186,7 +225,13 @@ app.post("/urlupload", async (req, res) => {
     const fileUrl = `${BASE_URL}/files/${filename}`;
     const previewUrl = `${BASE_URL}/f/${filename}`;
 
-    res.json({ success: true, url: fileUrl, preview: previewUrl, analysis, expiresIn: "7 days" });
+    res.json({
+      success: true,
+      url: fileUrl,
+      preview: previewUrl,
+      analysis,
+      expiresIn: "7 days",
+    });
   } catch (err) {
     console.error("URL upload error:", err);
     res.status(500).json({ success: false, error: "Internal server error" });
@@ -206,7 +251,7 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Preview (Discord embed)
+// ✅ Preview fichiers (classiques)
 app.get("/f/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
@@ -243,6 +288,59 @@ app.get("/f/:filename", (req, res) => {
   `);
 });
 
+// ✅ Preview screenshots (style Discord embed rouge/noir)
+app.get("/ss/:filename", (req, res) => {
+  const filePath = path.join(UPLOADS_DIR, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
+
+  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
+
+  res.send(`
+    <html>
+      <head>
+        <meta property="og:title" content="Hebi Screenshot" />
+        <meta property="og:image" content="${fileUrl}" />
+        <meta name="theme-color" content="#ff0000" />
+        <style>
+          body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+          }
+          .embed {
+            background: #111;
+            border: 2px solid red;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
+            max-width: 90%;
+          }
+          .header {
+            color: red;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+          img {
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="embed">
+          <div class="header">Hebi Screenshot</div>
+          <img src="${fileUrl}" alt="Screenshot"/>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 // ✅ Status
 app.get("/status", (req, res) => {
   const meta = readMeta();
@@ -250,38 +348,17 @@ app.get("/status", (req, res) => {
   res.json({ api: "online", filesCount, timestamp: new Date() });
 });
 
-// ✅ Delete (protégé par clé API)
-app.delete("/delete/:filename", (req, res) => {
-  const apiKey = req.headers["x-api-key"];
-  if (apiKey !== process.env.API_KEY) {
-    return res.status(403).json({ success: false, error: "Forbidden" });
-  }
-
-  const filename = req.params.filename;
-  const filePath = path.join(UPLOADS_DIR, filename);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ success: false, error: "File not found" });
-  }
-
-  fs.unlinkSync(filePath);
-
-  const meta = readMeta();
-  delete meta[filename];
-  writeMeta(meta);
-
-  return res.json({ success: true, message: `Deleted ${filename}` });
-});
-
-// 🧹 Auto-delete après 7 jours
+// 🧹 Auto-delete (2j si screenshot, 7j sinon)
 setInterval(() => {
   const meta = readMeta();
   const now = Date.now();
+  const twoDays = 2 * 24 * 60 * 60 * 1000;
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
   let changed = false;
 
   for (const [filename, info] of Object.entries(meta)) {
-    if (now - info.uploadedAt > sevenDays) {
+    const maxAge = info.isScreenshot ? twoDays : sevenDays;
+    if (now - info.uploadedAt > maxAge) {
       const filePath = path.join(UPLOADS_DIR, filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       delete meta[filename];
@@ -293,5 +370,5 @@ setInterval(() => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
-  console.log(`Hebi Upload running on port ${PORT}`)
+  console.log(`🚀 Hebi Upload running on port ${PORT}`)
 );
