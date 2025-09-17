@@ -67,6 +67,21 @@ async function verifyHCaptcha(token, ip) {
   return !!j.success;
 }
 
+const { validateKey } = require("./utils/keyManager");
+
+// Middleware de protection par clé + IP
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    const key = req.headers["x-api-key"];
+    const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+
+    if (!key || !validateKey(key, ip)) {
+      return res.status(403).json({ success: false, error: "Invalid or unauthorized key" });
+    }
+  }
+  next();
+});
+
 // verify endpoint
 app.post("/api/verify", async (req, res) => {
   const { userId, secret, captchaToken } = req.body;
@@ -188,6 +203,7 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
