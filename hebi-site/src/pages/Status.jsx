@@ -6,7 +6,7 @@ export default function Status() {
 
   async function fetchStatus() {
     try {
-      const res = await fetch("https://upload.javelin.asia/api/status");
+      const res = await fetch("https://upload.javelin.asia/status");
       const data = await res.json();
       setStatus(data);
       setLastUpdate(new Date().toLocaleString());
@@ -27,6 +27,7 @@ export default function Status() {
 
       {status ? (
         <div className="space-y-4">
+          {/* API status */}
           <div className="p-4 rounded bg-zinc-900 flex justify-between">
             <span>API</span>
             <span
@@ -38,23 +39,37 @@ export default function Status() {
             </span>
           </div>
 
+          {/* Files stored */}
           <div className="p-4 rounded bg-zinc-900 flex justify-between">
             <span>Files stored</span>
             <span className="text-blue-400">{status.filesCount}</span>
           </div>
 
+          {/* Files deleted today */}
           <div className="p-4 rounded bg-zinc-900 flex justify-between">
             <span>Files deleted today</span>
             <span className="text-yellow-400">{status.deletedToday}</span>
+          </div>
+
+          {/* Expiration policy */}
+          <div className="p-4 rounded bg-zinc-900 flex justify-between">
+            <span>Expiration policy</span>
+            <span className="text-gray-400">7 days auto-deletion</span>
+          </div>
+
+          {/* API timestamp */}
+          <div className="p-4 rounded bg-zinc-900 flex justify-between">
+            <span>API timestamp</span>
+            <span className="text-gray-400">
+              {new Date(status.timestamp).toLocaleString()}
+            </span>
           </div>
         </div>
       ) : (
         <p className="text-gray-400">Loading status...</p>
       )}
 
-      <p className="mt-6 text-gray-500 text-sm">
-        Last update: {lastUpdate}
-      </p>
+      <p className="mt-6 text-gray-500 text-sm">Last update: {lastUpdate}</p>
     </div>
   );
 }
