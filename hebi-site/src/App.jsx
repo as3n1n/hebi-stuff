@@ -4,9 +4,7 @@ import Upload from "./pages/Upload";
 import Docs from "./pages/Docs";
 import Status from "./pages/Status";
 import Contact from "./pages/Contact";
-import Faq from "./pages/Faq";  // ✅ ajouté
-import ProtectedRoute from "./components/ProtectedRoute";
-import Invite from "./pages/Invite";
+import Faq from "./pages/Faq";
 
 export default function App() {
   return (
@@ -20,7 +18,7 @@ export default function App() {
             <Link to="/upload" className="hover:text-red-500 transition">Upload</Link>
             <Link to="/docs" className="hover:text-red-500 transition">Docs</Link>
             <Link to="/status" className="hover:text-red-500 transition">Status</Link>
-            <Link to="/faq" className="hover:text-red-500 transition">FAQ</Link> {/* ✅ ajouté */}
+            <Link to="/faq" className="hover:text-red-500 transition">FAQ</Link>
             <Link to="/contact" className="hover:text-red-500 transition">Contact</Link>
           </nav>
         </header>
@@ -29,36 +27,10 @@ export default function App() {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/invite" element={<Invite />} />
-
-            {/* Protected routes */}
-            <Route
-              path="/upload"
-              element={
-                <ProtectedRoute>
-                  <Upload />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/docs"
-              element={
-                <ProtectedRoute>
-                  <Docs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/status"
-              element={
-                <ProtectedRoute>
-                  <Status />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Public routes */}
-            <Route path="/faq" element={<Faq />} /> {/* ✅ ajouté */}
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/status" element={<Status />} />
+            <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
