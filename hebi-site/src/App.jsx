@@ -18,8 +18,8 @@ export default function App() {
             <Link to="/upload" className="hover:text-red-500 transition">Upload</Link>
             <Link to="/docs" className="hover:text-red-500 transition">Docs</Link>
             <Link to="/status" className="hover:text-red-500 transition">Status</Link>
-            <Link to="/faq" className="hover:text-red-500 transition">FAQ</Link>
             <Link to="/contact" className="hover:text-red-500 transition">Contact</Link>
+            <Link to="/faq" className="hover:text-red-500 transition">FAQ</Link>
           </nav>
         </header>
 
@@ -30,8 +30,8 @@ export default function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/status" element={<Status />} />
-            <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<Faq />} />
           </Routes>
         </main>
 
