@@ -22,9 +22,20 @@ function writeMeta(data) {
   fs.writeFileSync(META_PATH, JSON.stringify(data, null, 2));
 }
 
-// 📦 Multer config → max 200MB
+// 📦 Multer config → conserve extension + limite 200MB
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // récupère extension (.png, .mp4, .mov…)
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + ext); // garde l’extension
+  },
+});
+
 const upload = multer({
-  dest: UPLOADS_DIR,
+  storage,
   limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 });
 
