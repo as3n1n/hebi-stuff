@@ -35,7 +35,7 @@ export default function Upload() {
   };
 
   const handleUpload = async () => {
-    if (!file) return setError("⚠️ Please choose or drop a file first.");
+    if (!file) return setError("Please choose or drop a file first.");
     setUploading(true);
     setError(null);
     setResult(null);
@@ -53,10 +53,10 @@ export default function Upload() {
       if (data.success) {
         setResult(data);
       } else {
-        setError(data.error || "❌ Upload failed.");
+        setError(data.error || "Upload failed.");
       }
     } catch (err) {
-      setError("❌ Error uploading file.");
+      setError("Error uploading file.");
     }
 
     setUploading(false);
@@ -102,7 +102,7 @@ export default function Upload() {
       {/* Résultat */}
       {result && (
         <div className="mt-8 bg-zinc-900 p-6 rounded-xl w-full max-w-xl text-center">
-          <p className="text-green-400 font-bold mb-2">✅ Upload successful!</p>
+          <p className="text-green-400 font-bold mb-2">Upload successful!</p>
 
           <p className="text-sm text-gray-400">Direct link:</p>
           <a
@@ -133,3 +133,4 @@ export default function Upload() {
     </div>
   );
 }
+
