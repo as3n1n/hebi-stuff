@@ -163,6 +163,34 @@ export default function Upload() {
             {result.preview}
           </a>
 
+          {/* Afficher Hashes */}
+          {result.analysis && (
+            <div className="mt-6 text-left">
+              {result.analysis.type && (
+                <p>
+                  <span className="font-semibold">Type:</span>{" "}
+                  {result.analysis.type}
+                </p>
+              )}
+              {result.analysis.contents && (
+                <div className="mt-2">
+                  <span className="font-semibold">Archive Contents:</span>
+                  <pre className="bg-zinc-800 p-2 mt-1 rounded text-xs overflow-x-auto">
+                    {result.analysis.contents.join("\n")}
+                  </pre>
+                </div>
+              )}
+              {result.analysis.nsfw && (
+                <div className="mt-2">
+                  <span className="font-semibold">NSFW Analysis:</span>
+                  <pre className="bg-zinc-800 p-2 mt-1 rounded text-xs overflow-x-auto">
+                    {result.analysis.nsfw.join("\n")}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="text-gray-500 text-xs mt-4">
             This file will be deleted automatically in {result.expiresIn}.
           </p>
