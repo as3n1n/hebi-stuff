@@ -4,32 +4,27 @@ const faqs = [
   {
     question: "What is Hebi?",
     answer:
-      "Hebi is a private file hosting service. It allows fast uploads, Discord embed previews, and automatic file expiration after 7 days.",
+      "Hebi is a private platform for secure file uploads with auto-expiration (7 days), preview support for Discord, and API integration.",
   },
   {
-    question: "How do uploads work?",
+    question: "How long are my files kept?",
     answer:
-      "You can upload images and videos directly from the Upload page. Once uploaded, you will receive a direct link and a Discord-compatible preview link.",
+      "All uploaded files are automatically deleted after 7 days. This keeps the platform clean and avoids abuse.",
   },
   {
-    question: "How long are files stored?",
+    question: "Can I share my file links?",
     answer:
-      "Files are stored for 7 days. After that, they are automatically deleted from the server.",
+      "Yes! Each uploaded file gets a direct link and a preview link for Discord. Both will expire after 7 days.",
   },
   {
-    question: "Can I share links publicly?",
+    question: "Is there an API documentation?",
     answer:
-      "Yes. Each uploaded file generates a unique link that you can share anywhere, including Discord, where it will generate a proper embed preview.",
-  },
-  {
-    question: "Is there an API?",
-    answer:
-      "Yes. Developers can use the API endpoint at https://api.javelin.asia/api/fileupload to upload files programmatically. Documentation will be provided soon.",
+      "Yes, developers can use the Hebi API to automate uploads. Documentation is available in the Docs section.",
   },
   {
     question: "Where is my data stored?",
     answer:
-      "All files are stored on Hebi’s backend server. Metadata is tracked only to manage expiration and deletion. No personal data is collected.",
+      "Uploaded files are stored securely on Hebi's backend. Files are not indexed or made public without sharing the link.",
   },
 ];
 
