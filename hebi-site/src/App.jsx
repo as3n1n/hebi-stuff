@@ -2,7 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Docs from "./pages/Docs";
-import Faq from "./pages/Faq"; // 👈 nouvelle page FAQ
+import Status from "./pages/Status";
+import Contact from "./pages/Contact";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Invite from "./pages/Invite";
 
 export default function App() {
   return (
@@ -12,24 +15,30 @@ export default function App() {
         <header className="bg-zinc-950 border-b border-zinc-800 p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-red-600">Hebi</h1>
           <nav className="space-x-6">
-            <Link to="/" className="hover:text-red-500">Home</Link>
-            <Link to="/upload" className="hover:text-red-500">Upload</Link>
-            <Link to="/docs" className="hover:text-red-500">Docs</Link>
-            <Link to="/faq" className="hover:text-red-500">FAQ</Link>
+            <Link to="/">Home</Link>
+            <Link to="/upload">Upload</Link>
+            <Link to="/docs">Docs</Link>
+            <Link to="/status">Status</Link>
+            <Link to="/contact">Contact</Link>
           </nav>
         </header>
 
-        {/* Pages */}
+        {/* Routes */}
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/faq" element={<Faq />} /> 
+            <Route path="/invite" element={<Invite />} />
+
+            {/* Protected routes */}
+            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+            <Route path="/docs" element={<ProtectedRoute><Docs /></ProtectedRoute>} />
+            <Route path="/status" element={<ProtectedRoute><Status /></ProtectedRoute>} />
+
+            {/* Public */}
+            <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
 
-        {/* Footer */}
         <footer className="bg-zinc-950 border-t border-zinc-800 p-4 text-center text-sm text-gray-400">
           Hebi © {new Date().getFullYear()}
         </footer>
