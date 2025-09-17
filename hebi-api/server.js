@@ -1,19 +1,26 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const auth = require("./middleware/auth");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
-app.use(cors());
+app.use(cors({
+  origin: ["https://javelin.asia", "https://www.javelin.asia"], // autoriser ton site
+  credentials: true
+}));
 app.use(express.json());
 
 // root
 app.get("/", (req, res) => res.send("✅ Hebi API is running"));
 
-// validate key
-app.post("/validate-key", auth, (req, res) => res.json({ success: true }));
+// validate key (fixe pour ton site)
+app.post("/api/validate-key", auth, (req, res) => {
+  res.json({ success: true, message: "Key validated successfully" });
+});
 
 // file upload
 app.post("/api/fileupload", auth, upload.single("fileToUpload"), (req, res) => {
@@ -59,8 +66,6 @@ app.post("/api/unban", (req, res) => {
     return res.status(403).json({ success: false, error: "Unauthorized" });
   }
 
-  const fs = require("fs");
-  const path = require("path");
   const bansPath = path.join(__dirname, "data/bans.json");
   let bans = [];
   if (fs.existsSync(bansPath)) {
