@@ -15,11 +15,11 @@ export default function App() {
         <header className="bg-zinc-950 border-b border-zinc-800 p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-red-600">Hebi</h1>
           <nav className="space-x-6">
-            <Link to="/">Home</Link>
-            <Link to="/upload">Upload</Link>
-            <Link to="/docs">Docs</Link>
-            <Link to="/status">Status</Link>
-            <Link to="/contact">Contact</Link>
+            <Link to="/" className="hover:text-red-500 transition">Home</Link>
+            <Link to="/upload" className="hover:text-red-500 transition">Upload</Link>
+            <Link to="/docs" className="hover:text-red-500 transition">Docs</Link>
+            <Link to="/status" className="hover:text-red-500 transition">Status</Link>
+            <Link to="/contact" className="hover:text-red-500 transition">Contact</Link>
           </nav>
         </header>
 
@@ -30,15 +30,37 @@ export default function App() {
             <Route path="/invite" element={<Invite />} />
 
             {/* Protected routes */}
-            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-            <Route path="/docs" element={<ProtectedRoute><Docs /></ProtectedRoute>} />
-            <Route path="/status" element={<ProtectedRoute><Status /></ProtectedRoute>} />
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute>
+                  <Upload />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/docs"
+              element={
+                <ProtectedRoute>
+                  <Docs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/status"
+              element={
+                <ProtectedRoute>
+                  <Status />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Public */}
+            {/* Public route */}
             <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
 
+        {/* Footer */}
         <footer className="bg-zinc-950 border-t border-zinc-800 p-4 text-center text-sm text-gray-400">
           Hebi © {new Date().getFullYear()}
         </footer>
