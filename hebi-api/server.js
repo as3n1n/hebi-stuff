@@ -22,13 +22,13 @@ function writeMeta(data) {
   fs.writeFileSync(META_PATH, JSON.stringify(data, null, 2));
 }
 
-// 📦 Multer config → conserve extension + limite 200MB
+// 📦 Multer config → conserve extension
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname); // garde l’extension (.png, .mp4, .mov…)
+    const ext = path.extname(file.originalname);
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, unique + ext);
   },
@@ -46,10 +46,10 @@ app.use(express.json());
 const BASE_URL = "https://upload.javelin.asia";
 
 // ✅ Root test
-app.get("/", (req, res) => res.send("✅ Hebi API is running"));
+app.get("/", (req, res) => res.send("✅ Hebi Upload is running"));
 
-// ✅ File upload
-app.post("/api/fileupload", upload.single("fileToUpload"), (req, res) => {
+// ✅ File upload (nouvelle route simplifiée)
+app.post("/upload", upload.single("fileToUpload"), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
 
   // Ajout metadata
@@ -121,7 +121,7 @@ app.get("/f/:filename", (req, res) => {
 });
 
 // ✅ Status route
-app.get("/api/status", (req, res) => {
+app.get("/status", (req, res) => {
   const meta = readMeta();
   const filesCount = Object.keys(meta).length;
 
@@ -162,7 +162,7 @@ setInterval(() => {
   }
 
   if (changed) writeMeta(meta);
-}, 1000 * 60 * 60); // toutes les heures
+}, 1000 * 60 * 60);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Hebi API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
