@@ -7,6 +7,8 @@ const mime = require("mime-types");
 const fetch = require("node-fetch");
 const crypto = require("crypto");
 const AdmZip = require("adm-zip");
+const tf = require("@tensorflow/tfjs-node");
+const nsfw = require("nsfwjs");
 
 const app = express();
 
@@ -35,7 +37,7 @@ function getHashes(filePath) {
 }
 
 // 📦 Analyse interne
-function analyzeFile(filePath, ext) {
+async function analyzeFile(filePath, ext) {
   let analysis = {};
   if (ext === ".zip") {
     try {
@@ -48,7 +50,21 @@ function analyzeFile(filePath, ext) {
     analysis.type = "executable";
   } else if ([".jpg", ".jpeg", ".png", ".gif"].includes(ext)) {
     analysis.type = "image";
-    // ⚡ Ici tu peux plugger un modèle NSFW (TensorFlow ou autre)
+
+    // 🚨 Détection NSFW
+    try {
+      const imageBuffer = fs.readFileSync(filePath);
+      const image = tf.node.decodeImage(imageBuffer, 3);
+      const model = await nsfw.load();
+      const predictions = await model.classify(image);
+      image.dispose();
+
+      analysis.nsfw = predictions.map(
+        p => `${p.className}: ${(p.probability * 100).toFixed(2)}%`
+      );
+    } catch (err) {
+      analysis.nsfw = ["NSFW scan failed"];
+    }
   }
   return analysis;
 }
@@ -70,9 +86,19 @@ async function logToDiscord(file, hashes, analysis) {
               { name: "MD5", value: hashes.md5 },
               { name: "SHA256", value: hashes.sha256 },
               ...(analysis.contents
-                ? [{ name: "Archive Contents", value: analysis.contents.slice(0, 10).join("\n") }]
+                ? [
+                    {
+                      name: "Archive Contents",
+                      value: analysis.contents.slice(0, 10).join("\n"),
+                    },
+                  ]
                 : []),
-              ...(analysis.type ? [{ name: "Detected Type", value: analysis.type }] : []),
+              ...(analysis.type
+                ? [{ name: "Detected Type", value: analysis.type }]
+                : []),
+              ...(analysis.nsfw
+                ? [{ name: "NSFW Analysis", value: analysis.nsfw.join("\n") }]
+                : []),
             ],
             timestamp: new Date().toISOString(),
           },
@@ -111,7 +137,7 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
   const ext = path.extname(req.file.originalname).toLowerCase();
 
   const hashes = getHashes(filePath);
-  const analysis = analyzeFile(filePath, ext);
+  const analysis = await analyzeFile(filePath, ext);
 
   const meta = readMeta();
   meta[req.file.filename] = { uploadedAt: Date.now(), hashes, analysis };
@@ -149,7 +175,7 @@ app.post("/urlupload", async (req, res) => {
     fs.writeFileSync(filePath, buffer);
 
     const hashes = getHashes(filePath);
-    const analysis = analyzeFile(filePath, ext);
+    const analysis = await analyzeFile(filePath, ext);
 
     const meta = readMeta();
     meta[filename] = { uploadedAt: Date.now(), source: url, hashes, analysis };
@@ -224,6 +250,29 @@ app.get("/status", (req, res) => {
   res.json({ api: "online", filesCount, timestamp: new Date() });
 });
 
+// ✅ Delete (protégé par clé API)
+app.delete("/delete/:filename", (req, res) => {
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ success: false, error: "Forbidden" });
+  }
+
+  const filename = req.params.filename;
+  const filePath = path.join(UPLOADS_DIR, filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ success: false, error: "File not found" });
+  }
+
+  fs.unlinkSync(filePath);
+
+  const meta = readMeta();
+  delete meta[filename];
+  writeMeta(meta);
+
+  return res.json({ success: true, message: `Deleted ${filename}` });
+});
+
 // 🧹 Auto-delete après 7 jours
 setInterval(() => {
   const meta = readMeta();
@@ -243,4 +292,6 @@ setInterval(() => {
 }, 1000 * 60 * 60);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Hebi Upload running on port ${PORT}`)
+);
