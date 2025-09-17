@@ -4,32 +4,32 @@ const faqs = [
   {
     question: "What is Hebi?",
     answer:
-      "Hebi is a private platform that allows secure file uploads, album management, and API integration with Discord bot verification.",
+      "Hebi is a private file hosting service. It allows fast uploads, Discord embed previews, and automatic file expiration after 7 days.",
   },
   {
-    question: "How do I get an invitation key?",
+    question: "How do uploads work?",
     answer:
-      "Invitation keys are generated only by admins via the Discord bot using /genkey. Keys are unique and bound to the first IP that uses them.",
+      "You can upload images and videos directly from the Upload page. Once uploaded, you will receive a direct link and a Discord-compatible preview link.",
   },
   {
-    question: "What happens if I share my key?",
+    question: "How long are files stored?",
     answer:
-      "If a key is shared, the system will immediately ban the new IP and revoke the key. This protects the platform from abuse.",
+      "Files are stored for 7 days. After that, they are automatically deleted from the server.",
   },
   {
-    question: "How can I unban an IP?",
+    question: "Can I share links publicly?",
     answer:
-      "If a ban was a mistake, admins can use the /unban command in Hebi Bot. This will restore access via the API.",
+      "Yes. Each uploaded file generates a unique link that you can share anywhere, including Discord, where it will generate a proper embed preview.",
   },
   {
-    question: "Is there an API documentation?",
+    question: "Is there an API?",
     answer:
-      "Yes. The full documentation is available on the Docs page. It explains how to use the API endpoints for file and album management.",
+      "Yes. Developers can use the API endpoint at https://api.javelin.asia/api/fileupload to upload files programmatically. Documentation will be provided soon.",
   },
   {
     question: "Where is my data stored?",
     answer:
-      "Uploaded files are stored securely on Hebi's backend. No public access is allowed without a valid key and API authentication.",
+      "All files are stored on Hebi’s backend server. Metadata is tracked only to manage expiration and deletion. No personal data is collected.",
   },
 ];
 
