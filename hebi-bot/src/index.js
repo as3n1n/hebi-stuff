@@ -69,7 +69,9 @@ async function verifyHCaptcha(token, ip) {
 
 const { validateKey } = require("./utils/keyManager");
 
+//
 // 🚨 ALERT SYSTEM
+//
 app.post("/api/alert", async (req, res) => {
   const { userId, ip, reason } = req.body;
 
@@ -94,12 +96,54 @@ app.post("/api/alert", async (req, res) => {
   res.json({ success: true });
 });
 
+//
+// 📂 NEW: Upload logs from Hebi API
+//
+app.post("/api/upload-log", async (req, res) => {
+  try {
+    const { file, url, preview, hashes, analysis } = req.body;
+
+    const guild = client.guilds.cache.get(process.env.GUILD_ID);
+    const logChannel = guild?.channels.cache.get(process.env.LOGS_CHANNEL_ID);
+
+    if (logChannel) {
+      await logChannel.send({
+        embeds: [
+          {
+            title: "📂 New Upload Logged",
+            color: 0xff0000,
+            fields: [
+              { name: "File", value: file || "N/A" },
+              { name: "Direct Link", value: url || "N/A" },
+              { name: "Preview Link", value: preview || "N/A" },
+              { name: "MD5", value: hashes?.md5 || "N/A" },
+              { name: "SHA256", value: hashes?.sha256 || "N/A" },
+              ...(analysis?.type ? [{ name: "Type", value: analysis.type }] : []),
+              ...(analysis?.contents
+                ? [{ name: "Archive Contents", value: analysis.contents.slice(0, 10).join("\n") }]
+                : []),
+            ],
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Upload log error:", err);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+});
+
+//
+// Express server
+//
 const ALERT_PORT = process.env.ALERT_PORT || 3002;
-app.listen(ALERT_PORT, () => console.log(`Bot alert listener running on ${ALERT_PORT}`));
+app.listen(ALERT_PORT, () => console.log(`Bot listener running on ${ALERT_PORT}`));
 
-// 🔐 Middleware de protection (sauf upload)
-const protectedRoutes = ["/api/verify"]; // liste des routes protégées
-
+// 🔐 Middleware de protection (sauf upload logs)
+const protectedRoutes = ["/api/verify"];
 app.use((req, res, next) => {
   if (protectedRoutes.includes(req.path)) {
     const key = req.headers["x-api-key"];
@@ -112,7 +156,9 @@ app.use((req, res, next) => {
   next();
 });
 
+//
 // ✅ VERIFY endpoint (protégé)
+//
 app.post("/api/verify", async (req, res) => {
   const { userId, secret, captchaToken } = req.body;
   if (secret !== process.env.API_SECRET) {
@@ -166,50 +212,9 @@ app.post("/api/verify", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Bot API running on port ${PORT}`));
-
-// 🔥 Interaction dispatcher
-client.on("interactionCreate", async (interaction) => {
-  if (interaction.isChatInputCommand()) {
-    const command = client.commands.get(interaction.commandName);
-    if (command) await command.execute(interaction, client);
-  }
-
-  if (interaction.isButton()) {
-    if (interaction.customId === "suggestion_modal") {
-      return require("./interactions/suggestionModal").execute(interaction);
-    }
-    if (interaction.customId === "bugreport_modal") {
-      return require("./interactions/bugReportModal").execute(interaction);
-    }
-  }
-
-  if (interaction.isModalSubmit()) {
-    if (interaction.customId === "suggestion_submit") {
-      return require("./interactions/suggestionModal").handleSubmit(interaction);
-    }
-    if (interaction.customId === "bugreport_submit") {
-      return require("./interactions/bugReportModal").handleSubmit(interaction);
-    }
-  }
-});
-
-client.on("interactionCreate", async (interaction) => {
-  if (interaction.isButton()) {
-    if (interaction.customId.startsWith("reply_")) {
-      return require("./interactions/replyModal").execute(interaction);
-    }
-  }
-
-  if (interaction.isModalSubmit()) {
-    if (interaction.customId.startsWith("reply_submit_")) {
-      return require("./interactions/replyModal").handleSubmit(interaction);
-    }
-  }
-});
-
+//
 // ✅ Register slash commands
+//
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
