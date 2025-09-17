@@ -1,13 +1,13 @@
 import { useState, useRef } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const dropRef = useRef(null);
-
-  const API_URL = import.meta.env.VITE_API_URL; // lit l’URL depuis Render
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -126,8 +126,8 @@ export default function Upload() {
             {result.preview}
           </a>
 
-          <p className="text-xs text-gray-500 mt-3">
-            ⏳ File will expire in {result.expiresIn}
+          <p className="text-xs text-gray-500 mt-4">
+            ⚠️ This file will be deleted automatically after 7 days.
           </p>
         </div>
       )}
