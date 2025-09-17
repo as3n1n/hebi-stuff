@@ -69,6 +69,33 @@ async function verifyHCaptcha(token, ip) {
 
 const { validateKey } = require("./utils/keyManager");
 
+app.post("/api/alert", async (req, res) => {
+  const { userId, ip, reason } = req.body;
+
+  try {
+    const user = await client.users.fetch(userId);
+    if (user) {
+      await user.send({
+        embeds: [
+          {
+            title: "Hebi API Security Alert",
+            description: `A suspicious action was detected.\n\n**Reason:** ${reason}\n**IP:** ${ip}`,
+            color: 0xff0000,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      });
+    }
+  } catch (err) {
+    console.error("Could not DM user:", err);
+  }
+
+  res.json({ success: true });
+});
+
+const ALERT_PORT = process.env.ALERT_PORT || 3002;
+app.listen(ALERT_PORT, () => console.log(`Bot alert listener running on ${ALERT_PORT}`));
+
 // Middleware de protection par clé + IP
 app.use((req, res, next) => {
   if (req.path.startsWith("/api/")) {
@@ -203,6 +230,7 @@ client.once("ready", async () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
