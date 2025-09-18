@@ -248,7 +248,7 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// Screenshots → image avec bordure gradient rouge/noir + glow rouge/noir/blanc + fond transparent
+// ✅ Screenshots → bordure gradient rouge/noir + glow rouge/noir/blanc + fond totalement transparent
 app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
@@ -257,7 +257,7 @@ app.get("/ss/:filename", async (req, res) => {
     const baseImg = sharp(filePath).png();
     const { width, height } = await baseImg.metadata();
 
-    // Bordure dégradée rouge → noir (SVG)
+    // Bordure dégradée rouge/noir (SVG)
     const gradientBorder = Buffer.from(`
       <svg width="${width + 20}" height="${height + 20}" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -267,15 +267,15 @@ app.get("/ss/:filename", async (req, res) => {
             <stop offset="100%" stop-color="red"/>
           </linearGradient>
         </defs>
-        <rect x="5" y="5" width="${width + 10}" height="${height + 10}" 
-              rx="15" ry="15" 
+        <rect x="5" y="5" width="${width + 10}" height="${height + 10}"
+              rx="15" ry="15"
               fill="none" stroke="url(#borderGrad)" stroke-width="10"/>
       </svg>
     `);
 
     // Glow rouge
     const redGlow = await sharp(filePath)
-      .resize(width + 40, height + 40, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(width + 40, height + 40, { fit: "contain" })
       .tint({ r: 255, g: 0, b: 0 })
       .blur(25)
       .png()
@@ -283,7 +283,7 @@ app.get("/ss/:filename", async (req, res) => {
 
     // Glow noir
     const blackGlow = await sharp(filePath)
-      .resize(width + 80, height + 80, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(width + 80, height + 80, { fit: "contain" })
       .tint({ r: 0, g: 0, b: 0 })
       .blur(60)
       .png()
@@ -291,13 +291,13 @@ app.get("/ss/:filename", async (req, res) => {
 
     // Glow blanc léger
     const whiteGlow = await sharp(filePath)
-      .resize(width + 140, height + 140, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(width + 140, height + 140, { fit: "contain" })
       .tint({ r: 255, g: 255, b: 255 })
       .blur(90)
       .png()
       .toBuffer();
 
-    // Composer final
+    // Composer avec fond transparent (⚡ pas de noir)
     const composite = await sharp({
       create: {
         width: width + 200,
@@ -353,5 +353,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
+
 
 
