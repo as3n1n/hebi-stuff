@@ -9,7 +9,6 @@ const crypto = require("crypto");
 const AdmZip = require("adm-zip");
 const tf = require("@tensorflow/tfjs-node");
 const nsfw = require("nsfwjs");
-const { createCanvas, loadImage } = require("canvas"); // 🆕 pour générer les screenshots stylisés
 
 const app = express();
 
@@ -227,37 +226,38 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → génère directement une image avec glow rouge
-app.get("/ss/:filename", async (req, res) => {
+// ✅ Screenshots → page HTML minimale avec glow rouge
+app.get("/ss/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
 
-  try {
-    const img = await loadImage(filePath);
-    const canvas = createCanvas(img.width + 40, img.height + 40);
-    const ctx = canvas.getContext("2d");
-
-    // Fond noir
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Glow rouge
-    ctx.shadowColor = "red";
-    ctx.shadowBlur = 30;
-    ctx.drawImage(img, 20, 20);
-
-    // Bordure rouge
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "red";
-    ctx.strokeRect(20, 20, img.width, img.height);
-
-    res.setHeader("Content-Type", "image/png");
-    canvas.pngStream().pipe(res);
-  } catch (err) {
-    console.error("Error generating screenshot:", err);
-    res.status(500).send("❌ Failed to generate screenshot");
-  }
+  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
+  res.send(`
+    <html>
+      <head>
+        <style>
+          body {
+            margin: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          img {
+            border-radius: 12px;
+            border: 3px solid red;
+            box-shadow: 0 0 40px rgba(255,0,0,0.9);
+            max-width: 95%;
+            height: auto;
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${fileUrl}" />
+      </body>
+    </html>
+  `);
 });
 
 // ✅ Delete (clé API)
