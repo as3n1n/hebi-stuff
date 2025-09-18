@@ -226,7 +226,7 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots avec glow (embed direct)
+// ✅ Screenshots avec bordure sur la page (et pas l’image)
 app.get("/ss/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
@@ -247,17 +247,26 @@ app.get("/ss/:filename", (req, res) => {
             height: 100vh;
             margin: 0;
           }
-          img {
-            border-radius: 12px;
-            border: 2px solid red;
+          .frame {
+            border: 3px solid red;
             box-shadow: 0 0 30px rgba(255,0,0,0.8);
+            border-radius: 12px;
+            padding: 10px;
+            background: black;
             max-width: 95%;
+          }
+          img {
+            display: block;
+            max-width: 100%;
             height: auto;
+            border-radius: 8px;
           }
         </style>
       </head>
       <body>
-        <img src="${fileUrl}" alt="Screenshot"/>
+        <div class="frame">
+          <img src="${fileUrl}" alt="Screenshot"/>
+        </div>
       </body>
     </html>
   `);
