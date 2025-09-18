@@ -153,7 +153,7 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
     uploadedAt: Date.now(),
     hashes,
     analysis,
-    isScreenshot: req.query.ss === "1" || false, // ⚡ si screenshot
+    isScreenshot: req.query.ss === "1" || false,
   };
   writeMeta(meta);
 
@@ -168,6 +168,7 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
     success: true,
     url: fileUrl,
     preview: previewUrl,
+    delete: `${BASE_URL}/delete/${req.file.filename}`, // 🔥 Delete URL
     analysis,
     expiresIn: meta[req.file.filename].isScreenshot ? "2 days" : "7 days",
   });
@@ -229,6 +230,7 @@ app.post("/urlupload", async (req, res) => {
       success: true,
       url: fileUrl,
       preview: previewUrl,
+      delete: `${BASE_URL}/delete/${filename}`, // 🔥 Delete URL
       analysis,
       expiresIn: "7 days",
     });
@@ -291,7 +293,8 @@ app.get("/f/:filename", (req, res) => {
 // ✅ Preview screenshots (style Discord embed rouge/noir)
 app.get("/ss/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
+  if (!fs.existsSync(filePath))
+    return res.status(404).send("Screenshot not found");
 
   const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
 
@@ -339,6 +342,29 @@ app.get("/ss/:filename", (req, res) => {
       </body>
     </html>
   `);
+});
+
+// ✅ Delete (protégé par clé API)
+app.delete("/delete/:filename", (req, res) => {
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ success: false, error: "Forbidden" });
+  }
+
+  const filename = req.params.filename;
+  const filePath = path.join(UPLOADS_DIR, filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ success: false, error: "File not found" });
+  }
+
+  fs.unlinkSync(filePath);
+
+  const meta = readMeta();
+  delete meta[filename];
+  writeMeta(meta);
+
+  return res.json({ success: true, message: `Deleted ${filename}` });
 });
 
 // ✅ Status
