@@ -248,14 +248,30 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → image avec bordure + glow rouge/noir/blanc et fond transparent
+// Screenshots → image avec bordure gradient rouge/noir + glow rouge/noir/blanc + fond transparent
 app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
+  if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
 
   try {
     const baseImg = sharp(filePath).png();
     const { width, height } = await baseImg.metadata();
+
+    // Bordure dégradée rouge → noir (SVG)
+    const gradientBorder = Buffer.from(`
+      <svg width="${width + 20}" height="${height + 20}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="red"/>
+            <stop offset="50%" stop-color="black"/>
+            <stop offset="100%" stop-color="red"/>
+          </linearGradient>
+        </defs>
+        <rect x="5" y="5" width="${width + 10}" height="${height + 10}" 
+              rx="15" ry="15" 
+              fill="none" stroke="url(#borderGrad)" stroke-width="10"/>
+      </svg>
+    `);
 
     // Glow rouge
     const redGlow = await sharp(filePath)
@@ -267,41 +283,34 @@ app.get("/ss/:filename", async (req, res) => {
 
     // Glow noir
     const blackGlow = await sharp(filePath)
-      .resize(width + 70, height + 70, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(width + 80, height + 80, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .tint({ r: 0, g: 0, b: 0 })
-      .blur(40)
+      .blur(60)
       .png()
       .toBuffer();
 
     // Glow blanc léger
     const whiteGlow = await sharp(filePath)
-      .resize(width + 120, height + 120, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(width + 140, height + 140, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .tint({ r: 255, g: 255, b: 255 })
-      .blur(70)
+      .blur(90)
       .png()
       .toBuffer();
 
-    // Bordure nette rouge/noir
-    const border = await sharp(filePath)
-      .resize(width, height, { fit: "contain" })
-      .extend({ top: 5, bottom: 5, left: 5, right: 5, background: { r: 255, g: 0, b: 0, alpha: 1 } })
-      .png()
-      .toBuffer();
-
-    // Composer
+    // Composer final
     const composite = await sharp({
       create: {
         width: width + 200,
         height: height + 200,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        background: { r: 0, g: 0, b: 0, alpha: 0 }, // transparent
       },
     })
       .composite([
         { input: whiteGlow, gravity: "center" },
         { input: blackGlow, gravity: "center" },
         { input: redGlow, gravity: "center" },
-        { input: border, gravity: "center" },
+        { input: gradientBorder, gravity: "center" },
         { input: await baseImg.toBuffer(), gravity: "center" },
       ])
       .png()
@@ -312,37 +321,6 @@ app.get("/ss/:filename", async (req, res) => {
   } catch (err) {
     console.error("Glow generation failed:", err);
     res.status(500).send("Failed to generate glow image");
-  }
-});
-
-// ✅ Delete (clé API)
-app.delete("/delete/:filename", (req, res) => {
-  try {
-    const apiKey = req.headers["x-api-key"];
-    if (apiKey !== process.env.API_KEY) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(403).json({ success: false, error: "Forbidden" });
-    }
-
-    const filename = req.params.filename;
-    const filePath = path.join(UPLOADS_DIR, filename);
-
-    if (!fs.existsSync(filePath)) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(404).json({ success: false, error: "File not found" });
-    }
-
-    fs.unlinkSync(filePath);
-    const meta = readMeta();
-    delete meta[filename];
-    writeMeta(meta);
-
-    res.setHeader("Content-Type", "application/json");
-    res.json({ success: true, message: `Deleted ${filename}` });
-  } catch (err) {
-    console.error("Delete error:", err);
-    res.setHeader("Content-Type", "application/json");
-    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
@@ -375,4 +353,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
+
 
