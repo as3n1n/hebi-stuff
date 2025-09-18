@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const AdmZip = require("adm-zip");
 const tf = require("@tensorflow/tfjs-node");
 const nsfw = require("nsfwjs");
+const { createCanvas, loadImage } = require("canvas"); // 🆕 pour générer les screenshots stylisés
 
 const app = express();
 
@@ -226,94 +227,37 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Preview screenshot (Discord embed utilise framed)
-app.get("/ss/:filename", (req, res) => {
+// ✅ Screenshots → génère directement une image avec glow rouge
+app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
+  if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
 
-  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
-  const framedUrl = `${BASE_URL}/framed/${req.params.filename}`;
+  try {
+    const img = await loadImage(filePath);
+    const canvas = createCanvas(img.width + 40, img.height + 40);
+    const ctx = canvas.getContext("2d");
 
-  res.send(`
-    <html>
-      <head>
-        <meta property="og:title" content="Hebi Screenshot" />
-        <meta property="og:image" content="${framedUrl}" />
-        <meta name="theme-color" content="#ff0000" />
-        <style>
-          body {
-            background: #0a0a0a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-          }
-          .frame {
-            border: 3px solid red;
-            box-shadow: 0 0 30px rgba(255,0,0,0.8);
-            border-radius: 12px;
-            padding: 10px;
-            background: black;
-            max-width: 95%;
-          }
-          img {
-            display: block;
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="frame">
-          <img src="${fileUrl}" alt="Screenshot"/>
-        </div>
-      </body>
-    </html>
-  `);
-});
+    // Fond noir
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// ✅ Image encadrée pour Discord embed
-app.get("/framed/:filename", (req, res) => {
-  const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
+    // Glow rouge
+    ctx.shadowColor = "red";
+    ctx.shadowBlur = 30;
+    ctx.drawImage(img, 20, 20);
 
-  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
-  res.send(`
-    <html>
-      <head>
-        <style>
-          body {
-            margin: 0;
-            background: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-          }
-          .frame {
-            border: 6px solid black;
-            outline: 3px solid red;
-            box-shadow: 0 0 40px rgba(255,0,0,0.9);
-            border-radius: 12px;
-            padding: 5px;
-          }
-          img {
-            display: block;
-            max-width: 90%;
-            height: auto;
-            border-radius: 8px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="frame">
-          <img src="${fileUrl}" />
-        </div>
-      </body>
-    </html>
-  `);
+    // Bordure rouge
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "red";
+    ctx.strokeRect(20, 20, img.width, img.height);
+
+    res.setHeader("Content-Type", "image/png");
+    canvas.pngStream().pipe(res);
+  } catch (err) {
+    console.error("Error generating screenshot:", err);
+    res.status(500).send("❌ Failed to generate screenshot");
+  }
 });
 
 // ✅ Delete (clé API)
