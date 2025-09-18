@@ -226,17 +226,19 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots avec bordure sur la page (et pas l’image)
+// ✅ Preview screenshot (Discord embed utilise framed)
 app.get("/ss/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
 
   const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
+  const framedUrl = `${BASE_URL}/framed/${req.params.filename}`;
+
   res.send(`
     <html>
       <head>
         <meta property="og:title" content="Hebi Screenshot" />
-        <meta property="og:image" content="${fileUrl}" />
+        <meta property="og:image" content="${framedUrl}" />
         <meta name="theme-color" content="#ff0000" />
         <style>
           body {
@@ -266,6 +268,48 @@ app.get("/ss/:filename", (req, res) => {
       <body>
         <div class="frame">
           <img src="${fileUrl}" alt="Screenshot"/>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+// ✅ Image encadrée pour Discord embed
+app.get("/framed/:filename", (req, res) => {
+  const filePath = path.join(UPLOADS_DIR, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
+
+  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
+  res.send(`
+    <html>
+      <head>
+        <style>
+          body {
+            margin: 0;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          .frame {
+            border: 6px solid black;
+            outline: 3px solid red;
+            box-shadow: 0 0 40px rgba(255,0,0,0.9);
+            border-radius: 12px;
+            padding: 5px;
+          }
+          img {
+            display: block;
+            max-width: 90%;
+            height: auto;
+            border-radius: 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="frame">
+          <img src="${fileUrl}" />
         </div>
       </body>
     </html>
