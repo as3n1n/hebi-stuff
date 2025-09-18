@@ -248,49 +248,104 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → image avec cadre rouge/noir générée avec Sharp
 app.get("/ss/:filename", async (req, res) => {
-  const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
-
   try {
-    const input = fs.readFileSync(filePath);
+    const filePath = path.join(UPLOADS_DIR, req.params.filename);
+    if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
 
-    // Cadre SVG rouge/noir
-    const border = Buffer.from(`
-      <svg width="1400" height="1400" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="red" />
-            <stop offset="50%" stop-color="black" />
-            <stop offset="100%" stop-color="red" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" width="1400" height="1400" rx="40" ry="40"
-              fill="none" stroke="url(#borderGrad)" stroke-width="40"/>
-      </svg>
-    `);
+    // Métadonnées de l'image d'origine
+    const inputSharp = sharp(filePath);
+    const meta = await inputSharp.metadata();
+    const w = meta.width || 0;
+    const h = meta.height || 0;
+    if (!w || !h) throw new Error("Invalid source image size");
 
-    const composite = await sharp({
+    // Paramètres ajustables
+    const BORDER = Math.max(2, parseInt(req.query.b || "12", 10)); // épaisseur anneau
+    const GLOW = Math.max(10, parseInt(req.query.g || "90", 10));  // taille glow
+    const RADIUS = Math.max(
+      0,
+      parseInt(
+        req.query.r ||
+          String(Math.round(Math.min(w, h) * 0.04)), // arrondi auto 4% min dimension
+        10
+      )
+    );
+
+    // Padding pour accueillir la bordure + glow
+    const PADDING = BORDER + GLOW;
+    const OUT_W = w + 2 * PADDING;
+    const OUT_H = h + 2 * PADDING;
+
+    // Anneau (bordure) : gradient rouge → bordeaux, forme rectangle arrondi
+    const ringSvg = (innerW, innerH, border, radius) => {
+      const ringW = innerW + 2 * border;
+      const ringH = innerH + 2 * border;
+      const outerR = Math.max(0, radius + border);
+
+      return Buffer.from(
+        `<svg width="${ringW}" height="${ringH}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff3b3b"/>
+              <stop offset="50%" stop-color="#b00303"/>
+              <stop offset="100%" stop-color="#ff3b3b"/>
+            </linearGradient>
+            <mask id="hole">
+              <rect width="100%" height="100%" fill="white"/>
+              <!-- on évide la zone de l'image pour créer un anneau -->
+              <rect x="${border}" y="${border}" width="${innerW}" height="${innerH}"
+                    rx="${radius}" ry="${radius}" fill="black"/>
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="${ringW}" height="${ringH}" rx="${outerR}" ry="${outerR}"
+                fill="url(#rg)" mask="url(#hole)"/>
+        </svg>`
+      );
+    };
+
+    // 1) Fond noir
+    const base = sharp({
       create: {
-        width: 1400,
-        height: 1400,
+        width: OUT_W,
+        height: OUT_H,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 1 }
-      }
-    })
+        background: { r: 0, g: 0, b: 0, alpha: 1 },
+      },
+    });
+
+    // 2) Glow = anneau flouté (placé sous l’anneau net)
+    const ringBuf = ringSvg(w, h, BORDER, RADIUS);
+    const glowBuf = await sharp(ringBuf)
+      .blur(Math.max(1, Math.round(GLOW / 14))) // sigma raisonnable
+      .toBuffer();
+
+    // 3) Image originale avec coins arrondis (optionnel, pour matcher la bordure)
+    const roundedMask = Buffer.from(
+      `<svg width="${w}" height="${h}">
+         <rect x="0" y="0" width="${w}" height="${h}" rx="${RADIUS}" ry="${RADIUS}" fill="white"/>
+       </svg>`
+    );
+    const roundedImage = await inputSharp
+      .resize({ width: w, height: h, fit: "cover" })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .toBuffer();
+
+    // 4) Composite final (ordre: glow -> anneau -> image)
+    const out = await base
       .composite([
-        { input: input, gravity: "center" },
-        { input: border, gravity: "center" }
+        { input: glowBuf, left: PADDING - BORDER, top: PADDING - BORDER },
+        { input: ringBuf, left: PADDING - BORDER, top: PADDING - BORDER },
+        { input: roundedImage, left: PADDING, top: PADDING },
       ])
       .png()
       .toBuffer();
 
     res.setHeader("Content-Type", "image/png");
-    res.send(composite);
+    res.send(out);
   } catch (err) {
-    console.error("Border generation failed:", err);
-    res.status(500).send("❌ Failed to generate border image");
+    console.error("SS generation failed:", err);
+    res.status(500).send("❌ Failed to generate screenshot frame");
   }
 });
 
