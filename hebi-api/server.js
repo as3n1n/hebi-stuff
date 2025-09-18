@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const AdmZip = require("adm-zip");
 const tf = require("@tensorflow/tfjs-node");
 const nsfw = require("nsfwjs");
+const sharp = require("sharp");
 
 const app = express();
 
@@ -226,38 +227,49 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → page HTML minimale avec glow rouge
-app.get("/ss/:filename", (req, res) => {
+// ✅ Screenshots → image avec glow dégradé générée avec Sharp
+app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
 
-  const fileUrl = `${BASE_URL}/files/${req.params.filename}`;
-  res.send(`
-    <html>
-      <head>
-        <style>
-          body {
-            margin: 0;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-          }
-          img {
-            border-radius: 12px;
-            border: 3px solid red;
-            box-shadow: 0 0 40px rgba(255,0,0,0.9);
-            max-width: 95%;
-            height: auto;
-          }
-        </style>
-      </head>
-      <body>
-        <img src="${fileUrl}" />
-      </body>
-    </html>
-  `);
+  try {
+    const input = fs.readFileSync(filePath);
+
+    // Création du glow dégradé autour
+    const glow = Buffer.from(`
+      <svg width="1200" height="1200">
+        <defs>
+          <radialGradient id="grad" r="80%" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="rgba(255,0,0,0.8)" />
+            <stop offset="50%" stop-color="rgba(255,140,0,0.6)" />
+            <stop offset="100%" stop-color="rgba(255,0,255,0)" />
+          </radialGradient>
+        </defs>
+        <rect width="1200" height="1200" fill="url(#grad)" />
+      </svg>
+    `);
+
+    const composite = await sharp({
+      create: {
+        width: 1200,
+        height: 1200,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    })
+      .composite([
+        { input: glow, gravity: "center" },
+        { input, gravity: "center" }
+      ])
+      .png()
+      .toBuffer();
+
+    res.setHeader("Content-Type", "image/png");
+    res.send(composite);
+  } catch (err) {
+    console.error("Glow generation failed:", err);
+    res.status(500).send("❌ Failed to generate glow image");
+  }
 });
 
 // ✅ Delete (clé API)
