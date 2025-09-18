@@ -248,7 +248,7 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → image avec glow dégradé générée avec Sharp
+// ✅ Screenshots → image avec cadre rouge/noir générée avec Sharp
 app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
@@ -256,31 +256,32 @@ app.get("/ss/:filename", async (req, res) => {
   try {
     const input = fs.readFileSync(filePath);
 
-    // Glow autour
-    const glow = Buffer.from(`
-      <svg width="1200" height="1200">
+    // Cadre SVG rouge/noir
+    const border = Buffer.from(`
+      <svg width="1400" height="1400" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="grad" r="80%" cx="50%" cy="50%">
-            <stop offset="0%" stop-color="rgba(255,0,0,0.8)" />
-            <stop offset="50%" stop-color="rgba(255,140,0,0.6)" />
-            <stop offset="100%" stop-color="rgba(255,0,255,0)" />
-          </radialGradient>
+          <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="red" />
+            <stop offset="50%" stop-color="black" />
+            <stop offset="100%" stop-color="red" />
+          </linearGradient>
         </defs>
-        <rect width="1200" height="1200" fill="url(#grad)" />
+        <rect x="0" y="0" width="1400" height="1400" rx="40" ry="40"
+              fill="none" stroke="url(#borderGrad)" stroke-width="40"/>
       </svg>
     `);
 
     const composite = await sharp({
       create: {
-        width: 1200,
-        height: 1200,
+        width: 1400,
+        height: 1400,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
+        background: { r: 0, g: 0, b: 0, alpha: 1 }
+      }
     })
       .composite([
-        { input: glow, gravity: "center" },
-        { input, gravity: "center" },
+        { input: input, gravity: "center" },
+        { input: border, gravity: "center" }
       ])
       .png()
       .toBuffer();
@@ -288,8 +289,8 @@ app.get("/ss/:filename", async (req, res) => {
     res.setHeader("Content-Type", "image/png");
     res.send(composite);
   } catch (err) {
-    console.error("Glow generation failed:", err);
-    res.status(500).send("❌ Failed to generate glow image");
+    console.error("Border generation failed:", err);
+    res.status(500).send("❌ Failed to generate border image");
   }
 });
 
