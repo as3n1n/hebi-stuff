@@ -241,46 +241,68 @@ app.post("/urlupload", async (req, res) => {
 // ✅ Fichiers bruts
 app.get("/files/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("❌ File not found");
+  if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
 
   const contentType = mime.lookup(filePath) || "application/octet-stream";
   res.setHeader("Content-Type", contentType);
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → image avec **lueur rouge/blanche** autour et fond transparent
+// ✅ Screenshots → image avec bordure + glow rouge/noir/blanc et fond transparent
 app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("❌ Screenshot not found");
 
   try {
-    const input = sharp(filePath).png();
-    const { width, height } = await input.metadata();
+    const baseImg = sharp(filePath).png();
+    const { width, height } = await baseImg.metadata();
 
-    // Glow rouge/blanc SVG basé sur la taille de l'image
-    const glow = Buffer.from(`
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="glow" cx="50%" cy="50%" r="70%">
-            <stop offset="60%" stop-color="rgba(255,0,0,0.9)" />
-            <stop offset="100%" stop-color="rgba(255,255,255,0)" />
-          </radialGradient>
-        </defs>
-        <rect x="0" y="0" width="${width}" height="${height}" fill="url(#glow)" />
-      </svg>
-    `);
+    // Glow rouge
+    const redGlow = await sharp(filePath)
+      .resize(width + 40, height + 40, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .tint({ r: 255, g: 0, b: 0 })
+      .blur(25)
+      .png()
+      .toBuffer();
 
+    // Glow noir
+    const blackGlow = await sharp(filePath)
+      .resize(width + 70, height + 70, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .tint({ r: 0, g: 0, b: 0 })
+      .blur(40)
+      .png()
+      .toBuffer();
+
+    // Glow blanc léger
+    const whiteGlow = await sharp(filePath)
+      .resize(width + 120, height + 120, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .tint({ r: 255, g: 255, b: 255 })
+      .blur(70)
+      .png()
+      .toBuffer();
+
+    // Bordure nette rouge/noir
+    const border = await sharp(filePath)
+      .resize(width, height, { fit: "contain" })
+      .extend({ top: 5, bottom: 5, left: 5, right: 5, background: { r: 255, g: 0, b: 0, alpha: 1 } })
+      .png()
+      .toBuffer();
+
+    // Composer
     const composite = await sharp({
       create: {
-        width,
-        height,
+        width: width + 200,
+        height: height + 200,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }, // transparent
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       },
     })
       .composite([
-        { input: glow, blend: "over" },
-        { input: await input.toBuffer(), blend: "over" },
+        { input: whiteGlow, gravity: "center" },
+        { input: blackGlow, gravity: "center" },
+        { input: redGlow, gravity: "center" },
+        { input: border, gravity: "center" },
+        { input: await baseImg.toBuffer(), gravity: "center" },
       ])
       .png()
       .toBuffer();
@@ -289,7 +311,7 @@ app.get("/ss/:filename", async (req, res) => {
     res.send(composite);
   } catch (err) {
     console.error("Glow generation failed:", err);
-    res.status(500).send("❌ Failed to generate glow image");
+    res.status(500).send("Failed to generate glow image");
   }
 });
 
@@ -353,3 +375,4 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
+
