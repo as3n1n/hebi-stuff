@@ -1,5 +1,16 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, Collection, REST, Routes } = require("discord.js");
+const { 
+  Client, 
+  GatewayIntentBits, 
+  Collection, 
+  REST, 
+  Routes,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  EmbedBuilder
+} = require("discord.js");
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -223,22 +234,89 @@ client.once("ready", async () => {
   }
 });
 
-// Interaction handler (important)
+// Interaction handler (commands, buttons, modals)
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
   try {
-    await command.execute(interaction, client);
-  } catch (error) {
-    console.error("Command error:", error);
+    // Slash commands
+    if (interaction.isChatInputCommand()) {
+      const command = client.commands.get(interaction.commandName);
+      if (!command) return;
+      await command.execute(interaction, client);
+    }
 
-    if (interaction.deferred || interaction.replied) {
-      await interaction.followUp({ content: "Error during execution", ephemeral: true });
-    } else {
-      await interaction.reply({ content: "Error during execution", ephemeral: true });
+    // Boutons
+    if (interaction.isButton()) {
+      if (interaction.customId === "suggestion_modal") {
+        const modal = new ModalBuilder()
+          .setCustomId("suggestionForm")
+          .setTitle("Suggestion");
+
+        const input = new TextInputBuilder()
+          .setCustomId("suggestionText")
+          .setLabel("Votre suggestion")
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        return interaction.showModal(modal);
+      }
+
+      if (interaction.customId === "bugreport_modal") {
+        const modal = new ModalBuilder()
+          .setCustomId("bugForm")
+          .setTitle("Bug Report");
+
+        const input = new TextInputBuilder()
+          .setCustomId("bugText")
+          .setLabel("Décrivez le bug rencontré")
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        return interaction.showModal(modal);
+      }
+    }
+
+    // Modals
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId === "suggestionForm") {
+        const suggestion = interaction.fields.getTextInputValue("suggestionText");
+
+        const channel = client.channels.cache.get(process.env.SUGGESTION_CHANNEL_ID);
+        if (channel) {
+          const embed = new EmbedBuilder()
+            .setTitle("Nouvelle suggestion")
+            .setDescription(suggestion)
+            .setColor("Blue")
+            .setFooter({ text: `De ${interaction.user.tag}` })
+            .setTimestamp();
+          await channel.send({ embeds: [embed] });
+        }
+
+        return interaction.reply({ content: "Merci pour votre suggestion !", ephemeral: true });
+      }
+
+      if (interaction.customId === "bugForm") {
+        const bug = interaction.fields.getTextInputValue("bugText");
+
+        const channel = client.channels.cache.get(process.env.BUG_CHANNEL_ID);
+        if (channel) {
+          const embed = new EmbedBuilder()
+            .setTitle("Nouveau bug report")
+            .setDescription(bug)
+            .setColor("Red")
+            .setFooter({ text: `De ${interaction.user.tag}` })
+            .setTimestamp();
+          await channel.send({ embeds: [embed] });
+        }
+
+        return interaction.reply({ content: "Bug report envoyé avec succès.", ephemeral: true });
+      }
+    }
+  } catch (error) {
+    console.error("Interaction error:", error);
+    if (!interaction.replied) {
+      await interaction.reply({ content: "Erreur lors de l'exécution.", ephemeral: true });
     }
   }
 });
