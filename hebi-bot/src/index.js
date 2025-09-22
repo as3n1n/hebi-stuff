@@ -69,9 +69,7 @@ async function verifyHCaptcha(token, ip) {
 
 const { validateKey } = require("./utils/keyManager");
 
-//
-// 🚨 ALERT SYSTEM
-//
+// ALERT SYSTEM
 app.post("/api/alert", async (req, res) => {
   const { userId, ip, reason } = req.body;
 
@@ -82,7 +80,7 @@ app.post("/api/alert", async (req, res) => {
         embeds: [
           {
             title: "Hebi API Security Alert",
-            description: `A suspicious action was detected.\n\n**Reason:** ${reason}\n**IP:** ${ip}`,
+            description: `A suspicious action was detected.\n\nReason: ${reason}\nIP: ${ip}`,
             color: 0xff0000,
             timestamp: new Date().toISOString(),
           },
@@ -96,9 +94,7 @@ app.post("/api/alert", async (req, res) => {
   res.json({ success: true });
 });
 
-//
-// 📂 Upload logs depuis Hebi API
-//
+// Upload logs depuis Hebi API
 app.post("/api/upload-log", async (req, res) => {
   try {
     const { file, url, preview, hashes, analysis } = req.body;
@@ -110,7 +106,7 @@ app.post("/api/upload-log", async (req, res) => {
       await logChannel.send({
         embeds: [
           {
-            title: "📂 New Upload Logged",
+            title: "New Upload Logged",
             color: 0xff0000,
             fields: [
               { name: "File", value: file || "N/A" },
@@ -136,7 +132,7 @@ app.post("/api/upload-log", async (req, res) => {
   }
 });
 
-// 🔐 Middleware de protection (sauf upload logs)
+// Middleware de protection (sauf upload logs)
 const protectedRoutes = ["/api/verify"];
 app.use((req, res, next) => {
   if (protectedRoutes.includes(req.path)) {
@@ -150,9 +146,7 @@ app.use((req, res, next) => {
   next();
 });
 
-//
-// ✅ VERIFY endpoint (protégé)
-//
+// VERIFY endpoint (protégé)
 app.post("/api/verify", async (req, res) => {
   const { userId, secret, captchaToken } = req.body;
   if (secret !== process.env.API_SECRET) {
@@ -206,9 +200,7 @@ app.post("/api/verify", async (req, res) => {
   }
 });
 
-//
-// ✅ Register slash commands
-//
+// Register slash commands
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
@@ -220,19 +212,39 @@ client.once("ready", async () => {
   }
 
   try {
-    console.log("Enregistrement des commandes slash...");
+    console.log("Registering slash commands...");
     await rest.put(
       Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
       { body: commands }
     );
-    console.log("Slash commands enregistrées !");
+    console.log("Slash commands registered.");
   } catch (err) {
-    console.error("Erreur enregistrement slash:", err);
+    console.error("Error registering slash commands:", err);
   }
 });
 
-// 🎯 Un seul serveur Express exposé sur Render
+// Interaction handler (important)
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction, client);
+  } catch (error) {
+    console.error("Command error:", error);
+
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({ content: "Error during execution", ephemeral: true });
+    } else {
+      await interaction.reply({ content: "Error during execution", ephemeral: true });
+    }
+  }
+});
+
+// Express server on Render
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Bot API + Alert listener running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Bot API and Alert listener running on port ${PORT}`));
 
 client.login(process.env.DISCORD_TOKEN);
