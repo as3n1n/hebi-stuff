@@ -13,11 +13,11 @@ const sharp = require("sharp");
 
 const app = express();
 
-// 📂 Dossier uploads
+// Dossier uploads
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
-// 📄 Metadata
+// Metadata
 const META_PATH = path.join(UPLOADS_DIR, "metadata.json");
 if (!fs.existsSync(META_PATH)) fs.writeFileSync(META_PATH, "{}");
 
@@ -28,7 +28,7 @@ function writeMeta(data) {
   fs.writeFileSync(META_PATH, JSON.stringify(data, null, 2));
 }
 
-// 🧮 Hash
+// Hash
 function getHashes(filePath) {
   const buffer = fs.readFileSync(filePath);
   return {
@@ -37,7 +37,7 @@ function getHashes(filePath) {
   };
 }
 
-// 📦 Analyse interne
+// Analyse fichiers
 async function analyzeFile(filePath, ext) {
   let analysis = {};
   if (ext === ".zip") {
@@ -67,7 +67,7 @@ async function analyzeFile(filePath, ext) {
   return analysis;
 }
 
-// 📤 Log vers HebiBot (webhook Discord)
+// Log Discord
 async function logToDiscord(file, hashes, analysis) {
   if (!process.env.DISCORD_WEBHOOK) return;
   try {
@@ -77,17 +77,26 @@ async function logToDiscord(file, hashes, analysis) {
       body: JSON.stringify({
         embeds: [
           {
-            title: "📂 New Upload",
+            title: "New Upload",
             color: 0xff0000,
             fields: [
               { name: "File", value: file },
               { name: "MD5", value: hashes.md5 },
               { name: "SHA256", value: hashes.sha256 },
               ...(analysis.contents
-                ? [{ name: "Archive Contents", value: analysis.contents.slice(0, 10).join("\n") }]
+                ? [
+                    {
+                      name: "Archive Contents",
+                      value: analysis.contents.slice(0, 10).join("\n"),
+                    },
+                  ]
                 : []),
-              ...(analysis.type ? [{ name: "Detected Type", value: analysis.type }] : []),
-              ...(analysis.nsfw ? [{ name: "NSFW Analysis", value: analysis.nsfw.join("\n") }] : []),
+              ...(analysis.type
+                ? [{ name: "Detected Type", value: analysis.type }]
+                : []),
+              ...(analysis.nsfw
+                ? [{ name: "NSFW Analysis", value: analysis.nsfw.join("\n") }]
+                : []),
             ],
             timestamp: new Date().toISOString(),
           },
@@ -99,7 +108,7 @@ async function logToDiscord(file, hashes, analysis) {
   }
 }
 
-// 📦 Multer config
+// Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
   filename: (req, file, cb) => {
@@ -110,7 +119,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
+  limits: { fileSize: 200 * 1024 * 1024 },
 });
 
 app.use(
@@ -123,18 +132,19 @@ app.use(express.json());
 
 const BASE_URL = "https://upload.javelin.asia";
 
-// ✅ Root test
+// Root
 app.get("/", (req, res) => {
   res.setHeader("Content-Type", "application/json");
-  res.json({ success: true, message: "✅ Hebi Upload is running" });
+  res.json({ success: true, message: "Hebi Upload is running" });
 });
 
-// ✅ Upload fichier local
+// Upload fichier local
 app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
   try {
     if (!req.file) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(400).json({ success: false, error: "No file uploaded" });
+      return res
+        .status(400)
+        .json({ success: false, error: "No file uploaded" });
     }
 
     const filePath = path.join(UPLOADS_DIR, req.file.filename);
@@ -158,7 +168,6 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
     const ssUrl = `${BASE_URL}/ss/${req.file.filename}`;
     const previewUrl = meta[req.file.filename].isScreenshot ? ssUrl : fileUrl;
 
-    res.setHeader("Content-Type", "application/json");
     res.json({
       success: true,
       url: fileUrl,
@@ -169,34 +178,33 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
     });
   } catch (err) {
     console.error("Upload error:", err);
-    res.setHeader("Content-Type", "application/json");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// ✅ Upload depuis une URL
+// Upload depuis une URL
 app.post("/urlupload", async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) {
-      res.setHeader("Content-Type", "application/json");
+    if (!url)
       return res.status(400).json({ success: false, error: "No URL provided" });
-    }
 
     const response = await fetch(url);
-    if (!response.ok) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(400).json({ success: false, error: "Failed to fetch URL" });
-    }
+    if (!response.ok)
+      return res.status(400).json({ success: false, error: "Failed to fetch" });
 
     const size = response.headers.get("content-length");
     if (size && parseInt(size) > 200 * 1024 * 1024) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(400).json({ success: false, error: "File too large (max 200MB)" });
+      return res
+        .status(400)
+        .json({ success: false, error: "File too large (max 200MB)" });
     }
 
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
-    const ext = mime.extension(contentType) ? "." + mime.extension(contentType) : "";
+    const contentType =
+      response.headers.get("content-type") || "application/octet-stream";
+    const ext = mime.extension(contentType)
+      ? "." + mime.extension(contentType)
+      : "";
 
     const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
     const filePath = path.join(UPLOADS_DIR, filename);
@@ -222,7 +230,6 @@ app.post("/urlupload", async (req, res) => {
     const fileUrl = `${BASE_URL}/files/${filename}`;
     const previewUrl = `${BASE_URL}/ss/${filename}`;
 
-    res.setHeader("Content-Type", "application/json");
     res.json({
       success: true,
       url: fileUrl,
@@ -233,12 +240,11 @@ app.post("/urlupload", async (req, res) => {
     });
   } catch (err) {
     console.error("URL upload error:", err);
-    res.setHeader("Content-Type", "application/json");
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// ✅ Fichiers bruts
+// Fichiers bruts
 app.get("/files/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
@@ -248,7 +254,7 @@ app.get("/files/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// ✅ Screenshots → bordure gradient rouge/noir + glow rouge/noir/blanc + fond totalement transparent
+// Screenshots glow rouge/noir/blanc
 app.get("/ss/:filename", async (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
@@ -257,7 +263,6 @@ app.get("/ss/:filename", async (req, res) => {
     const baseImg = sharp(filePath).png();
     const { width, height } = await baseImg.metadata();
 
-    // Bordure dégradée rouge/noir (SVG)
     const gradientBorder = Buffer.from(`
       <svg width="${width + 20}" height="${height + 20}" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -273,7 +278,6 @@ app.get("/ss/:filename", async (req, res) => {
       </svg>
     `);
 
-    // Glow rouge
     const redGlow = await sharp(filePath)
       .resize(width + 40, height + 40, { fit: "contain" })
       .tint({ r: 255, g: 0, b: 0 })
@@ -281,7 +285,6 @@ app.get("/ss/:filename", async (req, res) => {
       .png()
       .toBuffer();
 
-    // Glow noir
     const blackGlow = await sharp(filePath)
       .resize(width + 80, height + 80, { fit: "contain" })
       .tint({ r: 0, g: 0, b: 0 })
@@ -289,7 +292,6 @@ app.get("/ss/:filename", async (req, res) => {
       .png()
       .toBuffer();
 
-    // Glow blanc léger
     const whiteGlow = await sharp(filePath)
       .resize(width + 140, height + 140, { fit: "contain" })
       .tint({ r: 255, g: 255, b: 255 })
@@ -297,13 +299,12 @@ app.get("/ss/:filename", async (req, res) => {
       .png()
       .toBuffer();
 
-    // Composer avec fond transparent (⚡ pas de noir)
     const composite = await sharp({
       create: {
         width: width + 200,
         height: height + 200,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }, // transparent
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       },
     })
       .composite([
@@ -324,7 +325,7 @@ app.get("/ss/:filename", async (req, res) => {
   }
 });
 
-// 🧹 Auto-delete (2j screenshot / 7j autres)
+// Auto-delete
 setInterval(() => {
   const meta = readMeta();
   const now = Date.now();
@@ -344,15 +345,13 @@ setInterval(() => {
   if (changed) writeMeta(meta);
 }, 1000 * 60 * 60);
 
-// 🔥 Middleware global d’erreur
+// Middleware erreur
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  res.setHeader("Content-Type", "application/json");
   res.status(500).json({ success: false, error: "Internal server error" });
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Hebi Upload running on port ${PORT}`));
-
-
-
+app.listen(PORT, () =>
+  console.log(`Hebi Upload running on port ${PORT}`)
+);
