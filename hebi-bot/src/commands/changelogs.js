@@ -7,12 +7,12 @@ module.exports = {
 
   async execute(interaction) {
     const embed = new EmbedBuilder()
-      .setTitle("📜 Changelogs Hebi")
+      .setTitle("Changelogs Hebi")
       .setColor("#B22222")
       .setDescription("Résumé des fonctionnalités disponibles et des dernières corrections.")
       .addFields(
         {
-          name: "📌 Commandes disponibles",
+          name: "Commandes disponibles",
           value:
             "- `/infohebi` → Affiche le dashboard (API status, suggestions, report bug)\n" +
             "- `/upload` → Gérer les envois et journaux\n" +
@@ -29,7 +29,7 @@ module.exports = {
           inline: false,
         },
         {
-          name: "🐞 Bugs corrigés et problèmes restants",
+          name: "Bugs corrigés et problèmes restants",
           value:
             "- Commandes slash qui ne répondaient pas → corrigé\n" +
             "- Ajout de la gestion des **interactions boutons & modals** (Suggestion / Report Bug)\n" +
@@ -40,14 +40,14 @@ module.exports = {
           inline: false,
         },
         {
-          name: "⚙️ Statut actuel",
+          name: "Statut actuel",
           value:
             "- **Base de données des anniversaires** → en cours de mise en place\n" +
             "- **API Vinted** → CA MARCHE PAS, OUBLIE",
           inline: false,
         },
         {
-          name: "ℹ️ Informations",
+          name: "Informations",
           value:
             "Le bot **Hebi** est en développement constant. Des mises à jour régulières sont appliquées.\n" +
             "Merci de signaler tout bug via le bouton **Report Bug** de la commande `/infohebi`.",
