@@ -351,6 +351,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: "Internal server error" });
 });
 
+// 🔹 Endpoint Status
+app.get("/status", (req, res) => {
+  res.json({
+    bot: "Operational",        
+    api: "Operational",        
+    database: "Down",          
+    website: "Operational",    
+    timestamp: Date.now(),
+  });
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
   console.log(`Hebi Upload running on port ${PORT}`)
