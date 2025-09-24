@@ -11,7 +11,7 @@ export default function Status() {
       setStatus(data);
       setLastUpdate(new Date().toLocaleString());
     } catch (e) {
-      console.error(e);
+      console.error("Erreur fetch status:", e);
     }
   }
 
@@ -21,52 +21,45 @@ export default function Status() {
     return () => clearInterval(interval);
   }, []);
 
+  function StatusCard({ name, state }) {
+    return (
+      <div className="p-4 rounded bg-zinc-900 flex justify-between items-center">
+        <span className="font-semibold">{name}</span>
+        <span
+          className={
+            state === "Operational"
+              ? "text-green-500"
+              : state === "Down"
+              ? "text-red-500"
+              : "text-yellow-400"
+          }
+        >
+          {state}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="p-10 bg-black text-white min-h-screen">
       <h1 className="text-3xl text-red-600 mb-6">Hebi Status</h1>
 
       {status ? (
         <div className="space-y-4">
-          {/* API status */}
-          <div className="p-4 rounded bg-zinc-900 flex justify-between">
-            <span>API</span>
-            <span
-              className={
-                status.api === "online" ? "text-green-500" : "text-red-500"
-              }
-            >
-              {status.api}
-            </span>
-          </div>
+          <StatusCard name="Bot" state={status.bot} />
+          <StatusCard name="API" state={status.api} />
+          <StatusCard name="Database" state={status.database} />
+          <StatusCard name="Website" state={status.website} />
 
-          {/* Files stored */}
           <div className="p-4 rounded bg-zinc-900 flex justify-between">
-            <span>Files stored</span>
-            <span className="text-blue-400">{status.filesCount}</span>
-          </div>
-
-          {/* Files deleted today */}
-          <div className="p-4 rounded bg-zinc-900 flex justify-between">
-            <span>Files deleted today</span>
-            <span className="text-yellow-400">{status.deletedToday}</span>
-          </div>
-
-          {/* Expiration policy */}
-          <div className="p-4 rounded bg-zinc-900 flex justify-between">
-            <span>Expiration policy</span>
-            <span className="text-gray-400">7 days auto-deletion</span>
-          </div>
-
-          {/* API timestamp */}
-          <div className="p-4 rounded bg-zinc-900 flex justify-between">
-            <span>API timestamp</span>
+            <span>Last API ping</span>
             <span className="text-gray-400">
               {new Date(status.timestamp).toLocaleString()}
             </span>
           </div>
         </div>
       ) : (
-        <p className="text-gray-400">Loading status...</p>
+        <p className="text-gray-400">Chargement du status...</p>
       )}
 
       <p className="mt-6 text-gray-500 text-sm">Last update: {lastUpdate}</p>
