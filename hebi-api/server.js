@@ -10,14 +10,14 @@ const AdmZip = require("adm-zip");
 const tf = require("@tensorflow/tfjs-node");
 const nsfw = require("nsfwjs");
 const sharp = require("sharp");
+const mongoose = require("mongoose");
+const authRoutes = require("./src/auth/authRoutes");
 
 const app = express();
+const BASE_URL = "https://upload.javelin.asia";
 
-// Dossier uploads
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
-
-// Metadata
 const META_PATH = path.join(UPLOADS_DIR, "metadata.json");
 if (!fs.existsSync(META_PATH)) fs.writeFileSync(META_PATH, "{}");
 
@@ -27,8 +27,6 @@ function readMeta() {
 function writeMeta(data) {
   fs.writeFileSync(META_PATH, JSON.stringify(data, null, 2));
 }
-
-// Hash
 function getHashes(filePath) {
   const buffer = fs.readFileSync(filePath);
   return {
@@ -36,8 +34,6 @@ function getHashes(filePath) {
     sha256: crypto.createHash("sha256").update(buffer).digest("hex"),
   };
 }
-
-// Analyse fichiers
 async function analyzeFile(filePath, ext) {
   let analysis = {};
   if (ext === ".zip") {
@@ -66,8 +62,6 @@ async function analyzeFile(filePath, ext) {
   }
   return analysis;
 }
-
-// Log Discord
 async function logToDiscord(file, hashes, analysis) {
   if (!process.env.DISCORD_WEBHOOK) return;
   try {
@@ -108,7 +102,6 @@ async function logToDiscord(file, hashes, analysis) {
   }
 }
 
-// Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
   filename: (req, file, cb) => {
@@ -130,29 +123,28 @@ app.use(
 );
 app.use(express.json());
 
-const BASE_URL = "https://upload.javelin.asia";
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB error:", err));
 
-// Root
+app.use("/api/auth", authRoutes);
+
 app.get("/", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.json({ success: true, message: "Hebi Upload is running" });
+  res.json({ success: true, message: "Hebi Upload + Auth API running" });
 });
 
-// Upload fichier local
 app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ success: false, error: "No file uploaded" });
-    }
-
+    if (!req.file)
+      return res.status(400).json({ success: false, error: "No file uploaded" });
     const filePath = path.join(UPLOADS_DIR, req.file.filename);
     const ext = path.extname(req.file.originalname).toLowerCase();
-
     const hashes = getHashes(filePath);
     const analysis = await analyzeFile(filePath, ext);
-
     const meta = readMeta();
     meta[req.file.filename] = {
       uploadedAt: Date.now(),
@@ -161,13 +153,10 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
       isScreenshot: req.query.ss === "1" || false,
     };
     writeMeta(meta);
-
     await logToDiscord(req.file.filename, hashes, analysis);
-
     const fileUrl = `${BASE_URL}/files/${req.file.filename}`;
     const ssUrl = `${BASE_URL}/ss/${req.file.filename}`;
     const previewUrl = meta[req.file.filename].isScreenshot ? ssUrl : fileUrl;
-
     res.json({
       success: true,
       url: fileUrl,
@@ -182,39 +171,30 @@ app.post("/upload", upload.single("fileToUpload"), async (req, res) => {
   }
 });
 
-// Upload depuis une URL
 app.post("/urlupload", async (req, res) => {
   try {
     const { url } = req.body;
     if (!url)
       return res.status(400).json({ success: false, error: "No URL provided" });
-
     const response = await fetch(url);
     if (!response.ok)
       return res.status(400).json({ success: false, error: "Failed to fetch" });
-
     const size = response.headers.get("content-length");
-    if (size && parseInt(size) > 200 * 1024 * 1024) {
+    if (size && parseInt(size) > 200 * 1024 * 1024)
       return res
         .status(400)
         .json({ success: false, error: "File too large (max 200MB)" });
-    }
-
     const contentType =
       response.headers.get("content-type") || "application/octet-stream";
     const ext = mime.extension(contentType)
       ? "." + mime.extension(contentType)
       : "";
-
     const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
     const filePath = path.join(UPLOADS_DIR, filename);
-
     const buffer = await response.buffer();
     fs.writeFileSync(filePath, buffer);
-
     const hashes = getHashes(filePath);
     const analysis = await analyzeFile(filePath, ext);
-
     const meta = readMeta();
     meta[filename] = {
       uploadedAt: Date.now(),
@@ -224,12 +204,9 @@ app.post("/urlupload", async (req, res) => {
       isScreenshot: false,
     };
     writeMeta(meta);
-
     await logToDiscord(filename, hashes, analysis);
-
     const fileUrl = `${BASE_URL}/files/${filename}`;
     const previewUrl = `${BASE_URL}/ss/${filename}`;
-
     res.json({
       success: true,
       url: fileUrl,
@@ -244,95 +221,30 @@ app.post("/urlupload", async (req, res) => {
   }
 });
 
-// Fichiers bruts
 app.get("/files/:filename", (req, res) => {
   const filePath = path.join(UPLOADS_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
-
   const contentType = mime.lookup(filePath) || "application/octet-stream";
   res.setHeader("Content-Type", contentType);
   res.sendFile(filePath);
 });
 
-// Screenshots glow rouge/noir/blanc
-app.get("/ss/:filename", async (req, res) => {
-  const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("Screenshot not found");
-
-  try {
-    const baseImg = sharp(filePath).png();
-    const { width, height } = await baseImg.metadata();
-
-    const gradientBorder = Buffer.from(`
-      <svg width="${width + 20}" height="${height + 20}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="red"/>
-            <stop offset="50%" stop-color="black"/>
-            <stop offset="100%" stop-color="red"/>
-          </linearGradient>
-        </defs>
-        <rect x="5" y="5" width="${width + 10}" height="${height + 10}"
-              rx="15" ry="15"
-              fill="none" stroke="url(#borderGrad)" stroke-width="10"/>
-      </svg>
-    `);
-
-    const redGlow = await sharp(filePath)
-      .resize(width + 40, height + 40, { fit: "contain" })
-      .tint({ r: 255, g: 0, b: 0 })
-      .blur(25)
-      .png()
-      .toBuffer();
-
-    const blackGlow = await sharp(filePath)
-      .resize(width + 80, height + 80, { fit: "contain" })
-      .tint({ r: 0, g: 0, b: 0 })
-      .blur(60)
-      .png()
-      .toBuffer();
-
-    const whiteGlow = await sharp(filePath)
-      .resize(width + 140, height + 140, { fit: "contain" })
-      .tint({ r: 255, g: 255, b: 255 })
-      .blur(90)
-      .png()
-      .toBuffer();
-
-    const composite = await sharp({
-      create: {
-        width: width + 200,
-        height: height + 200,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
-    })
-      .composite([
-        { input: whiteGlow, gravity: "center" },
-        { input: blackGlow, gravity: "center" },
-        { input: redGlow, gravity: "center" },
-        { input: gradientBorder, gravity: "center" },
-        { input: await baseImg.toBuffer(), gravity: "center" },
-      ])
-      .png()
-      .toBuffer();
-
-    res.setHeader("Content-Type", "image/png");
-    res.send(composite);
-  } catch (err) {
-    console.error("Glow generation failed:", err);
-    res.status(500).send("Failed to generate glow image");
-  }
+app.get("/status", (req, res) => {
+  res.json({
+    bot: "Operational",
+    api: "Operational",
+    database: "Connected",
+    website: "Operational",
+    timestamp: Date.now(),
+  });
 });
 
-// Auto-delete
 setInterval(() => {
   const meta = readMeta();
   const now = Date.now();
   const twoDays = 2 * 24 * 60 * 60 * 1000;
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
   let changed = false;
-
   for (const [filename, info] of Object.entries(meta)) {
     const maxAge = info.isScreenshot ? twoDays : sevenDays;
     if (now - info.uploadedAt > maxAge) {
@@ -345,24 +257,7 @@ setInterval(() => {
   if (changed) writeMeta(meta);
 }, 1000 * 60 * 60);
 
-// Middleware erreur
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ success: false, error: "Internal server error" });
-});
-
-// 🔹 Endpoint Status
-app.get("/status", (req, res) => {
-  res.json({
-    bot: "Operational",        
-    api: "Operational",        
-    database: "Down",          
-    website: "Operational",    
-    timestamp: Date.now(),
-  });
-});
-
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
-  console.log(`Hebi Upload running on port ${PORT}`)
+  console.log(`🚀 Hebi Upload + Auth API running on port ${PORT}`)
 );
