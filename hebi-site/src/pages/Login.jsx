@@ -1,15 +1,40 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext"; // ✅ Pour le login réel avec token
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logique de connexion (temporaire)
-    navigate("/panels");
+    setLoading(true);
+
+    try {
+      // Appel réel vers ton backend Render / Javelin
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Login failed");
+
+      // ✅ Stocke le token et charge le user
+      login(data.token);
+
+      // ✅ Redirige vers le dashboard Panels
+      navigate("/panels");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,15 +84,21 @@ export default function Login() {
                 <input type="checkbox" className="accent-red-600" />
                 <span>Remember Me</span>
               </label>
-              <a href="#" className="text-sm text-red-500 hover:underline">
+
+              {/* ✅ Lien correct vers Forgot Password */}
+              <Link
+                to="/forgot-password"
+                className="text-sm text-red-500 hover:underline"
+              >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
             <button
               type="submit"
+              disabled={loading}
               className="w-full bg-red-600 hover:bg-red-700 p-2 rounded font-semibold"
             >
-              Login
+              {loading ? "Connecting..." : "Login"}
             </button>
           </form>
         </div>
