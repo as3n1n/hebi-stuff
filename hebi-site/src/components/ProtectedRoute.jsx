@@ -1,4 +1,7 @@
+import { Navigate } from "react-router-dom";
+
 export default function ProtectedRoute({ children }) {
-  // 🔓 Tout est accessible (aucune vérification)
+  const token = localStorage.getItem("hebi_token");
+  if (!token) return <Navigate to="/login" replace />;
   return children;
 }
