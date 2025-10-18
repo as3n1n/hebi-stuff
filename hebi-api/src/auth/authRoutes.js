@@ -80,21 +80,25 @@ router.post("/forgot-password", async (req, res) => {
   res.json({ ok: true });
 });
 
-// 🔒 Reset password
 router.post("/reset-password", async (req, res) => {
   const { token, password } = req.body;
-  const user = await User.findOne({
-    resetToken: token,
-    resetTokenExp: { $gt: new Date() },
-  });
-  if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+  try {
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExp: { $gt: new Date() },
+    });
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
 
-  user.password = await bcrypt.hash(password, 10);
-  user.resetToken = null;
-  user.resetTokenExp = null;
-  await user.save();
+    user.password = await bcrypt.hash(password, 10);
+    user.resetToken = null;
+    user.resetTokenExp = null;
+    await user.save();
 
-  res.json({ ok: true });
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 module.exports = router;
